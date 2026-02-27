@@ -722,16 +722,11 @@
 /* ════════════════════════════════════════
    LANGUAGE LOADER
    Dynamically injects translations/xx.js
-   then calls applyLang() once loaded.
-   To add a new language:
-     1. Create translations/xx.js (copy en.js, translate values, keep keys)
-     2. Add <button> in #langToggle
    ════════════════════════════════════════ */
 let currentLang = localStorage.getItem('zakat_lang') || 'en';
-let L = {};   // active translation object — populated after script loads
+let L = {};   
 
 function loadLang(lang, callback) {
-  // Remove any previously injected translation script
   const old = document.getElementById('lang-script');
   if (old) old.remove();
 
@@ -782,7 +777,7 @@ function setLang(lang) {
    CONSTANTS
    ════════════════════════════════════════ */
 const TROY_OZ_TO_GRAM = 31.1035;
-const BHORI_TO_GRAM   = 11.6638;   // 1 ভরি = 11.6638 g (BD standard) — display only
+const BHORI_TO_GRAM   = 11.6638;   
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
 const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', GBP:'£', AUD:'A$', INR:'₹' };
 const METALS_URL  = './data/metals.json';
@@ -1253,7 +1248,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- One small style addition for the price disclaimer text -->
 <style>
 .price-disclaimer {
   font-size: 11px;
