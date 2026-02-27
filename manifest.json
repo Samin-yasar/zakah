@@ -2,7 +2,7 @@
   "name": "Zakah Calculator — Samin's Initiatives",
   "short_name": "Zakah Calc",
   "description": "A comprehensive, scholarly-accurate Zakah calculator covering all asset categories including digital wallets, investments, and business assets.",
-  "start_url": "./zakah-calculator.html",
+  "start_url": "./zakah/index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
