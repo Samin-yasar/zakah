@@ -782,6 +782,7 @@ function setLang(lang) {
    CONSTANTS
    ════════════════════════════════════════ */
 const TROY_OZ_TO_GRAM = 31.1035;
+const BHORI_TO_GRAM   = 11.6638;   // 1 ভরি = 11.6638 g (BD standard) — display only
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
 const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', GBP:'£', AUD:'A$', INR:'₹' };
 const METALS_URL  = './data/metals.json';
@@ -960,8 +961,17 @@ function updatePriceDisplay() {
   document.getElementById('goldPriceDisplay').textContent   = `${sym} ${goldPerGram.toFixed(2)}`;
   document.getElementById('silverPriceDisplay').textContent = `${sym} ${silverPerGram.toFixed(2)}`;
   document.getElementById('fxRateDisplay').textContent      = `${rate.toFixed(4)}`;
-  document.getElementById('goldPerGramSub').textContent   = `per gram (${currentCurrency})`;
-  document.getElementById('silverPerGramSub').textContent = `per gram (${currentCurrency})`;
+
+  // Per-bhori shown as informational sub-label for BDT; otherwise plain per-gram label
+  const isBDT = currentCurrency === 'BDT';
+  const goldBhoriPrice   = goldPerGram   * BHORI_TO_GRAM;
+  const silverBhoriPrice = silverPerGram * BHORI_TO_GRAM;
+  document.getElementById('goldPerGramSub').textContent =
+    isBDT ? `per gram · ${sym}${goldBhoriPrice.toLocaleString('en-US', {maximumFractionDigits:0})} / ভরি`
+           : `per gram (${currentCurrency})`;
+  document.getElementById('silverPerGramSub').textContent =
+    isBDT ? `per gram · ${sym}${silverBhoriPrice.toLocaleString('en-US', {maximumFractionDigits:0})} / ভরি`
+           : `per gram (${currentCurrency})`;
 }
 
 function updateFxBanner() {
