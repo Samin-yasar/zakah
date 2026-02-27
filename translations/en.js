@@ -1,8 +1,6 @@
 // translations/en.js — English
-// To add a new language: copy this file as translations/xx.js,
-// translate all values (never change the keys), then register it in index.html.
 
-const LANG_DATA = {
+window.LANG_DATA = {
   title: "Zakah Calculator",
   brand: "Samin's Initiatives",
   badge: "2026 Professional Zakah Calculator",
