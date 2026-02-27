@@ -123,6 +123,7 @@
         <div class="nisab-stat-label" data-i18n="zakah_rate">Zakah Rate</div>
       </div>
     </div>
+
     <!-- LIVE PRICE PANEL -->
     <div style="margin-top:16px;">
       <div class="price-panel">
@@ -138,7 +139,8 @@
             </button>
           </div>
         </div>
-        <div class="price-grid">
+        <!-- 3-cell grid: removed "Data Source" cell -->
+        <div class="price-grid" style="grid-template-columns: repeat(3, 1fr);">
           <div class="price-cell">
             <div class="price-cell-label">🥇 <span data-i18n="gold_24k_label">Gold 24k</span></div>
             <div class="price-cell-usd" id="goldUsdLabel">— USD/oz</div>
@@ -157,13 +159,9 @@
             <div class="price-cell-val loading-shimmer" id="fxRateDisplay">Loading…</div>
             <div class="price-cell-sub" id="fxRateSub">1 USD = ?</div>
           </div>
-          <div class="price-cell">
-            <div class="price-cell-label">🕒 <span data-i18n="data_source_label">Data Source</span></div>
-            <div class="price-cell-usd" id="metalSourceLabel">Trusted Provider</div>
-            <div class="price-cell-val" style="font-size:13px;color:var(--text-muted);" id="fxSourceLabel">Trusted Provider</div>
-            <div class="price-cell-sub" data-i18n="free_no_key">Via GitHub Actions · Key-free browser</div>
-          </div>
         </div>
+        <!-- Price data disclaimer -->
+        <p class="price-disclaimer" data-i18n="price_disclaimer">Metal and currency rates are sourced from independent third-party market data providers. Samin's Initiatives does not own, control, or warrant the accuracy of this information. All figures are indicative and intended solely for Zakah estimation purposes.</p>
       </div>
 
       <!-- API source attribution + FX rates strip -->
@@ -200,8 +198,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Hidden inputs used by calc() — set programmatically from live data -->
     </div>
   </div>
 
@@ -250,31 +246,36 @@
       </div>
       <p class="field-note" data-i18n="riba_note">⚠ Exclude any accrued interest (Riba) from bank accounts. Interest must be donated separately, not counted as Zakah.</p>
 
+      <!-- DIGITAL WALLETS — split into individual entities -->
       <div class="sub-heading" data-i18n="digital_wallets">Digital Wallets</div>
       <div class="field-group triple">
         <div class="field">
-          <label>bKash / Nagad</label>
+          <label>bKash</label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bkash" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label>Upay / Cellfin</label>
+          <label>Nagad</label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_nagad" value="0" min="0" oninput="calc()" /></div>
+        </div>
+        <div class="field">
+          <label>Upay</label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_upay" value="0" min="0" oninput="calc()" /></div>
+        </div>
+        <div class="field">
+          <label>Cellfin</label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_cellfin" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
           <label>Rocket / DBBL</label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rocket" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label>Pathao Pay</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_pathaoPay" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
           <label>PayPal / Payoneer</label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_paypal" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label>Venmo / Apple Pay</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_venmo" value="0" min="0" oninput="calc()" /></div>
+          <label><span data-i18n="others_wallet">Others</span></label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_othersWallet" value="0" min="0" oninput="calc()" /></div>
         </div>
       </div>
 
@@ -310,55 +311,39 @@
     <div class="section-body">
       <div class="info-box gold" data-i18n="jewelry_note">📌 Personal jewelry used regularly (by women) is exempt under Hanafi school. Include gold/silver not worn or kept as savings/investment.</div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-        <div class="sub-heading" style="margin:0;" data-i18n="gold_heading">Gold</div>
-        <!-- BHORI TOGGLE — only visible when currency = BDT -->
-        <div class="pill-toggle bhori-toggle" id="goldUnitToggle" style="display:none;">
-          <button onclick="setGoldUnit('gram')"  id="btn-gold-gram"  class="active">gram</button>
-          <button onclick="setGoldUnit('bhori')" id="btn-gold-bhori">ভরি</button>
-        </div>
-      </div>
-      <div class="info-box gold bhori-toggle" style="display:none;margin-top:8px;" id="bhoriGoldNote">
-        ১ ভরি = ১১.৬৬৩৮ গ্রাম (বাংলাদেশ মান) · 1 Bhori = 11.6638 g (BD standard)
-      </div>
+      <div class="sub-heading" data-i18n="gold_heading">Gold</div>
       <div class="field-group triple" style="margin-top:10px;">
         <div class="field">
-          <label>Gold 24k (<span class="gold-unit-label">grams</span>)</label>
+          <label>Gold 24k (grams)</label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold24k" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label>Gold 22k (<span class="gold-unit-label">grams</span>)</label>
+          <label>Gold 22k (grams)</label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold22k" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label>Gold 18k (<span class="gold-unit-label">grams</span>)</label>
+          <label>Gold 18k (grams)</label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold18k" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label>Gold 21k (<span class="gold-unit-label">grams</span>)</label>
+          <label>Gold 21k (grams)</label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold21k" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label><span data-i18n="gold_coins">Gold Coins / Bars</span> (24k, <span class="gold-unit-label">grams</span>)</label>
+          <label><span data-i18n="gold_coins">Gold Coins / Bars (24k, grams)</span></label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_goldCoins" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
       </div>
       <p class="field-note" data-i18n="karat_formula">Formula used: Weight × (Karat ÷ 24) × Current Gold Price per gram</p>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:18px;">
-        <div class="sub-heading" style="margin:0;" data-i18n="silver_heading">Silver</div>
-        <div class="pill-toggle bhori-toggle" id="silverUnitToggle" style="display:none;">
-          <button onclick="setSilverUnit('gram')"  id="btn-silver-gram"  class="active">gram</button>
-          <button onclick="setSilverUnit('bhori')" id="btn-silver-bhori">ভরি</button>
-        </div>
-      </div>
+      <div class="sub-heading" style="margin-top:18px;" data-i18n="silver_heading">Silver</div>
       <div class="field-group" style="margin-top:10px;">
         <div class="field">
-          <label><span data-i18n="silver_physical">Silver</span> (<span class="silver-unit-label">grams</span>)</label>
+          <label><span data-i18n="silver_physical">Silver (grams)</span></label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_silverGrams" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label><span data-i18n="silver_coins">Silver Coins / Bullion</span> (<span class="silver-unit-label">grams</span>)</label>
+          <label><span data-i18n="silver_coins">Silver Coins / Bullion (grams)</span></label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_silverBullion" value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
       </div>
@@ -706,7 +691,6 @@
       <button class="pwa-btn-dismiss" id="pwaBtnDismiss" aria-label="Dismiss">✕</button>
     </div>
   </div>
-  <!-- iOS-specific instruction (shown only on iOS Safari) -->
   <div class="pwa-ios-hint" id="pwaIosHint" hidden>
     <span data-i18n="pwa_ios_hint">Tap <strong>Share ⬆</strong> then <strong>"Add to Home Screen"</strong></span>
   </div>
@@ -736,357 +720,91 @@
 
 <script>
 /* ════════════════════════════════════════
-   LANGUAGE MODULES (JSON-style objects)
-   Add more languages by adding new entries
-   and calling setLang('code')
+   LANGUAGE LOADER
+   Dynamically injects translations/xx.js
+   then calls applyLang() once loaded.
+   To add a new language:
+     1. Create translations/xx.js (copy en.js, translate values, keep keys)
+     2. Add <button> in #langToggle
    ════════════════════════════════════════ */
-const LANGS = {
-  en: {
-    title: "Zakah Calculator",
-    brand: "Samin's Initiatives",
-    badge: "2026 Professional Zakah Calculator",
-    hero_title: "Calculate Your Zakah with Precision",
-    hero_desc: "A comprehensive, scholarly-accurate calculator covering all asset categories including digital wallets, investments, and business assets.",
-    security_note: "100% Secure & Open-Source — All data processed locally in your browser. No server. No data shared with anyone.",
-    quran_trans: '"Establish prayer and give Zakah." — Quran 2:43',
-    calc_settings: "Calculation Settings",
-    nisab_based_on: "Nisab Based On",
-    silver_nisab: "Silver (Recommended)",
-    gold_nisab: "Gold",
-    calendar_type: "Calendar Type",
-    lunar: "Lunar (2.5%)",
-    solar: "Solar (2.577%)",
-    nisab_weight: "Nisab Weight",
-    nisab_value: "Nisab Value",
-    zakah_rate: "Zakah Rate",
-    live_prices_title: "Live Metal Prices",
-    fetching: "Fetching…",
-    refresh: "Refresh",
-    gold_24k_label: "Gold 24k",
-    silver_999_label: "Silver 999",
-    fx_rate_label: "Exchange Rate",
-    data_source_label: "Data Source",
-    free_no_key: "Free · No API key",
-    fallback_header: "Live prices unavailable — please enter current prices manually",
-    fallback_note: "You can look up current prices from trusted financial sources. Enter the price per gram in your selected currency below.",
-    gold_price_label: "Gold Price / gram (24k)",
-    silver_price_label: "Silver Price / gram (999)",
-    price_updated: "Updated",
-    price_error: "Fetch failed — using manual input",
-    sec_cash_title: "Section A — Cash & Liquid Assets",
-    sec_cash_sub: "Physical cash, bank accounts, digital wallets",
-    physical_cash: "Physical Cash",
-    cash_on_hand: "Cash on Hand",
-    cash_foreign: "Foreign Currency",
-    bank_accounts: "Bank Accounts",
-    savings_account: "Savings Account",
-    current_account: "Current / Checking",
-    fd_savings: "FDR / Fixed Deposits",
-    riba_note: "⚠ Exclude any accrued interest (Riba) from bank accounts. Interest must be donated separately, not counted as Zakah.",
-    digital_wallets: "Digital Wallets",
-    receivables_personal: "Personal Receivables",
-    money_lent: "Money Lent to Others",
-    salary_due: "Salary / Bonus Due",
-    sec_metals_title: "Section B — Precious Metals & Jewelry",
-    sec_metals_sub: "Gold, silver, bullion, jewelry",
-    jewelry_note: "📌 Personal jewelry used regularly (by women) is exempt under Hanafi school. Include gold/silver not worn or kept as savings/investment.",
-    gold_heading: "Gold",
-    gold_24k: "Gold 24k (grams)",
-    gold_22k: "Gold 22k (grams)",
-    gold_18k: "Gold 18k (grams)",
-    gold_21k: "Gold 21k (grams)",
-    gold_coins: "Gold Coins / Bars (24k equiv g)",
-    karat_formula: "Formula: Weight × (Karat ÷ 24) × Current Gold Price per gram",
-    silver_heading: "Silver",
-    silver_physical: "Silver (grams)",
-    silver_coins: "Silver Coins / Bullion (grams)",
-    gold_value: "Gold Value",
-    silver_value: "Silver Value",
-    total_metal_value: "Total Metal Value",
-    sec_invest_title: "Section C — Investments & Financial Assets",
-    sec_invest_sub: "Stocks, mutual funds, crypto, pension",
-    stocks_heading: "Stocks & Shares",
-    stock_method_label: "Calculation Method",
-    method_trade: "Short-term Trading (2.5% of market value)",
-    method_longterm: "Long-term Investment (25% proxy)",
-    method_trade_info: "Short-term traders: Pay 2.5% on full portfolio value. Long-term investors: Pay 2.5% on 25% of portfolio (proxy for zakatable assets of the company).",
-    dse_stocks: "DSE Stocks (Bangladesh)",
-    international_stocks: "International Stocks",
-    mutual_funds: "Mutual Funds / ETFs",
-    crypto_heading: "Cryptocurrency",
-    crypto_note: "Scholars differ on crypto. Most contemporary scholars consider it Zakatable at market value. Include only holdings held for over a lunar year.",
-    market_val_label: "Market Value",
-    other_crypto: "Other Crypto",
-    pension_heading: "Provident Fund & Pension",
-    pension_note: "Include only the portion you can access. Many scholars say include your own contributions; employer portion upon receipt.",
-    provident_fund: "GPF / Provident Fund",
-    sanchayapatra: "Sanchayapatra / NSC",
-    bonds: "Govt Bonds / Sukuk",
-    other_invest: "Other Investment Schemes",
-    sec_biz_title: "Section D — Business Assets",
-    sec_biz_sub: "Inventory, receivables, business cash",
-    biz_exclude_note: "❌ Exclude: Land, Buildings, Machinery, Vehicles, Office Furniture & Equipment (PPE). These are NOT Zakatable.",
-    biz_liquid_heading: "Business Liquid Assets",
-    biz_cash: "Business Cash (in hand)",
-    biz_bank: "Business Bank Balance",
-    petty_cash: "Petty Cash / Float",
-    inventory_heading: "Inventory (at Sale Price)",
-    inventory_note: "Value inventory at current sale/retail price, NOT cost. Zakah is on the trade value, not what you paid.",
-    finished_goods: "Finished Goods",
-    raw_materials: "Raw Materials",
-    wip: "Work in Progress (WIP)",
-    trade_goods: "Trade Goods / Merchandise",
-    receivables_heading: "Business Receivables",
-    trade_receivables: "Trade Receivables",
-    advance_paid: "Advances Paid to Suppliers",
-    security_deposits: "Security Deposits Given",
-    sec_liab_title: "Section E — Liabilities & Deductions",
-    sec_liab_sub: "Short-term debts and payables due within 12 months",
-    liab_note: "⚠ Only deduct debts due within the next 12 months. For long-term loans (mortgage, car loan), deduct only the next 12 months of installments, NOT the remaining principal.",
-    personal_debts: "Personal Debts",
-    personal_loans: "Personal Loans Due",
-    credit_card: "Credit Card Balance",
-    mortgage_12mo: "Mortgage (next 12 months)",
-    rent_bills: "Overdue Rent / Utilities",
-    taxes_due: "Taxes Due",
-    business_liab: "Business Liabilities",
-    biz_loan: "Business Loans (12 months)",
-    trade_payables: "Trade Payables / Supplier Bills",
-    salaries_payable: "Salaries Payable",
-    advance_received: "Customer Advances Received",
-    your_zakah: "Your Zakah Summary",
-    hawl_note: "Based on one full Hawl (1 year) completion",
-    not_eligible: "Not Eligible Yet",
-    eligible: "Zakah Obligatory ✓",
-    total_assets_label: "Total Assets",
-    before_deductions: "before deductions",
-    total_liabilities_label: "Total Liabilities",
-    eligible_deductions: "eligible deductions",
-    net_wealth_label: "Net Zakatable Wealth",
-    after_deductions: "assets − liabilities",
-    nisab_threshold_label: "Nisab Threshold",
-    zakah_rate_label: "Rate Applied",
-    zakah_due_label: "Zakah Due",
-    payable_label: "Payable this year",
-    wealth_vs_nisab: "Your Wealth vs. Nisab",
-    detailed_breakdown: "Detailed Breakdown",
-    cash_liquid_bd: "Cash & Liquid Assets",
-    precious_metals_bd: "Precious Metals",
-    investments_bd: "Investments",
-    business_bd: "Business Assets",
-    liabilities_bd: "(-) Liabilities",
-    net_zakatable: "Net Zakatable Wealth",
-    zakah_payable: "Zakah Payable",
-    reset_btn: "Reset All Fields",
-    footer_tagline: "Building tools for the Ummah with transparency and trust",
-    designed_by: "Designed by",
-    privacy: "Privacy Policy",
-    open_source: "Open Source",
-    contact: "Contact",
-    local_processing: "100% Local Processing",
-    no_server: "No Server Dependency",
-    open_src_badge: "Open Source",
-    pwa_title: "Install Zakah Calculator",
-    pwa_desc: "Add to your home screen for offline access",
-    pwa_install: "Install App",
-    pwa_ios_hint: "Tap Share ⬆ then \"Add to Home Screen\"",
-  },
-  bn: {
-    title: "যাকাত ক্যালকুলেটর",
-    brand: "সামিনের উদ্যোগ",
-    badge: "২০২৬ পেশাদার যাকাত ক্যালকুলেটর",
-    hero_title: "নির্ভুলভাবে আপনার যাকাত হিসাব করুন",
-    hero_desc: "একটি পূর্ণাঙ্গ, বিদ্বান-সম্মত ক্যালকুলেটর — ডিজিটাল ওয়ালেট, বিনিয়োগ ও ব্যবসায়িক সম্পদসহ সব ক্যাটাগরি অন্তর্ভুক্ত।",
-    security_note: "১০০% নিরাপদ ও ওপেন-সোর্স — সমস্ত ডেটা আপনার ব্রাউজারে স্থানীয়ভাবে প্রক্রিয়া হয়। কোনো সার্ভার নেই। কারো সাথে ডেটা শেয়ার হয় না।",
-    quran_trans: '"নামাজ কায়েম করো এবং যাকাত আদায় করো।" — সূরা বাকারাহ: ৪৩',
-    calc_settings: "হিসাবের সেটিংস",
-    nisab_based_on: "নিসাব ভিত্তি",
-    silver_nisab: "রূপা (প্রস্তাবিত)",
-    gold_nisab: "সোনা",
-    calendar_type: "ক্যালেন্ডার ধরন",
-    lunar: "চান্দ্র (২.৫%)",
-    solar: "সৌর (২.৫৭৭%)",
-    nisab_weight: "নিসাবের পরিমাণ",
-    nisab_value: "নিসাবের মূল্য",
-    zakah_rate: "যাকাতের হার",
-    live_prices_title: "লাইভ ধাতুর দাম",
-    fetching: "লোড হচ্ছে…",
-    refresh: "আবার আনুন",
-    gold_24k_label: "সোনা ২৪ক",
-    silver_999_label: "রূপা ৯৯৯",
-    fx_rate_label: "বিনিময় হার",
-    data_source_label: "ডেটা উৎস",
-    free_no_key: "বিনামূল্যে · কোনো API কী নেই",
-    fallback_header: "লাইভ দাম পাওয়া যাচ্ছে না — অনুগ্রহ করে ম্যানুয়ালি দাম দিন",
-    fallback_note: "বিশ্বস্ত আর্থিক উৎস থেকে বর্তমান দাম দেখুন। নিচে প্রতি গ্রামের দাম লিখুন।",
-    gold_price_label: "সোনার দাম / গ্রাম (২৪ক)",
-    silver_price_label: "রূপার দাম / গ্রাম (৯৯৯)",
-    price_updated: "আপডেট",
-    price_error: "লোড ব্যর্থ — ম্যানুয়াল ইনপুট ব্যবহার করুন",
-    sec_cash_title: "বিভাগ ক — নগদ ও তরল সম্পদ",
-    sec_cash_sub: "নগদ অর্থ, ব্যাংক হিসাব, ডিজিটাল ওয়ালেট",
-    physical_cash: "নগদ অর্থ",
-    cash_on_hand: "হাতে নগদ",
-    cash_foreign: "বিদেশি মুদ্রা",
-    bank_accounts: "ব্যাংক হিসাব",
-    savings_account: "সঞ্চয়ী হিসাব",
-    current_account: "চলতি হিসাব",
-    fd_savings: "এফডিআর / মেয়াদী আমানত",
-    riba_note: "⚠ ব্যাংক থেকে প্রাপ্ত সুদ (রিবা) বাদ দিন। সুদ আলাদাভাবে দান করতে হবে, যাকাতে গণনা হবে না।",
-    digital_wallets: "ডিজিটাল ওয়ালেট",
-    receivables_personal: "ব্যক্তিগত পাওনা",
-    money_lent: "ধার দেওয়া অর্থ",
-    salary_due: "বকেয়া বেতন / বোনাস",
-    sec_metals_title: "বিভাগ খ — মূল্যবান ধাতু ও গহনা",
-    sec_metals_sub: "সোনা, রূপা, বুলিয়ন, গহনা",
-    jewelry_note: "📌 হানাফি মাযহাব অনুযায়ী মহিলাদের নিয়মিত ব্যবহৃত গহনা মাফ। সঞ্চয় বা বিনিয়োগ হিসেবে রাখা সোনা/রূপা অন্তর্ভুক্ত করুন।",
-    gold_heading: "সোনা",
-    gold_24k: "সোনা ২৪ ক্যারেট (গ্রাম)",
-    gold_22k: "সোনা ২২ ক্যারেট (গ্রাম)",
-    gold_18k: "সোনা ১৮ ক্যারেট (গ্রাম)",
-    gold_21k: "সোনা ২১ ক্যারেট (গ্রাম)",
-    gold_coins: "সোনার কয়েন / বার (২৪ক সমমান গ্রাম)",
-    karat_formula: "সূত্র: ওজন × (ক্যারেট ÷ ২৪) × বর্তমান সোনার দাম প্রতি গ্রাম",
-    silver_heading: "রূপা",
-    silver_physical: "রূপা (গ্রাম)",
-    silver_coins: "রূপার কয়েন / বুলিয়ন (গ্রাম)",
-    gold_value: "সোনার মূল্য",
-    silver_value: "রূপার মূল্য",
-    total_metal_value: "মোট ধাতুর মূল্য",
-    sec_invest_title: "বিভাগ গ — বিনিয়োগ ও আর্থিক সম্পদ",
-    sec_invest_sub: "শেয়ার, মিউচুয়াল ফান্ড, ক্রিপ্টো, পেনশন",
-    stocks_heading: "শেয়ার ও স্টক",
-    stock_method_label: "হিসাবের পদ্ধতি",
-    method_trade: "স্বল্পমেয়াদী ট্রেড (বাজারমূল্যের ২.৫%)",
-    method_longterm: "দীর্ঘমেয়াদী বিনিয়োগ (২৫% প্রক্সি)",
-    method_trade_info: "স্বল্পমেয়াদী: পূর্ণ পোর্টফলিও মূল্যের ২.৫%। দীর্ঘমেয়াদী: পোর্টফলিওর ২৫% এর উপর ২.৫% (কোম্পানির যাকাতযোগ্য সম্পদের প্রক্সি)।",
-    dse_stocks: "ডিএসই শেয়ার (বাংলাদেশ)",
-    international_stocks: "আন্তর্জাতিক শেয়ার",
-    mutual_funds: "মিউচুয়াল ফান্ড / ইটিএফ",
-    crypto_heading: "ক্রিপ্টোকারেন্সি",
-    crypto_note: "ক্রিপ্টো নিয়ে আলেমদের মতভেদ আছে। অধিকাংশ সমসাময়িক আলেম বাজারমূল্যে যাকাতযোগ্য মনে করেন। এক চান্দ্র বছরের বেশি ধারণ করা হোল্ডিং অন্তর্ভুক্ত করুন।",
-    market_val_label: "বাজারমূল্য",
-    other_crypto: "অন্যান্য ক্রিপ্টো",
-    pension_heading: "ভবিষ্যৎ তহবিল ও পেনশন",
-    pension_note: "শুধু যে অংশ আপনি অ্যাক্সেস করতে পারেন তা অন্তর্ভুক্ত করুন। বেশিরভাগ আলেম নিজের অবদান অন্তর্ভুক্ত করতে বলেন।",
-    provident_fund: "জিপিএফ / ভবিষ্যৎ তহবিল",
-    sanchayapatra: "সঞ্চয়পত্র / এনএসসি",
-    bonds: "সরকারি বন্ড / সুকুক",
-    other_invest: "অন্যান্য বিনিয়োগ স্কিম",
-    sec_biz_title: "বিভাগ ঘ — ব্যবসায়িক সম্পদ",
-    sec_biz_sub: "মজুদ পণ্য, পাওনা, ব্যবসায়িক নগদ",
-    biz_exclude_note: "❌ বাদ দিন: জমি, ভবন, যন্ত্রপাতি, যানবাহন, আসবাবপত্র ও সরঞ্জাম (পিপিই)। এগুলো যাকাতযোগ্য নয়।",
-    biz_liquid_heading: "ব্যবসায়িক তরল সম্পদ",
-    biz_cash: "ব্যবসায়িক হাতে নগদ",
-    biz_bank: "ব্যবসায়িক ব্যাংক ব্যালেন্স",
-    petty_cash: "ক্ষুদ্র নগদ",
-    inventory_heading: "মজুদ পণ্য (বিক্রয় মূল্যে)",
-    inventory_note: "মজুদ পণ্যের মূল্য বর্তমান বিক্রয়/খুচরা মূল্যে ধরুন, ক্রয়মূল্যে নয়।",
-    finished_goods: "সম্পূর্ণ পণ্য",
-    raw_materials: "কাঁচামাল",
-    wip: "প্রক্রিয়াধীন কাজ (WIP)",
-    trade_goods: "বাণিজ্যিক পণ্য",
-    receivables_heading: "ব্যবসায়িক পাওনা",
-    trade_receivables: "বাণিজ্যিক পাওনা",
-    advance_paid: "সরবরাহকারীদের অগ্রিম",
-    security_deposits: "জামানত আমানত",
-    sec_liab_title: "বিভাগ ঙ — দায় ও কর্তন",
-    sec_liab_sub: "১২ মাসের মধ্যে পরিশোধযোগ্য স্বল্পমেয়াদী ঋণ",
-    liab_note: "⚠ শুধু আগামী ১২ মাসে পরিশোধযোগ্য ঋণ কাটুন। দীর্ঘমেয়াদী ঋণের (বন্ধক, গাড়ি ঋণ) শুধু আগামী ১২ মাসের কিস্তি কাটুন, সম্পূর্ণ বাকি আসল নয়।",
-    personal_debts: "ব্যক্তিগত ঋণ",
-    personal_loans: "ব্যক্তিগত ঋণ (বকেয়া)",
-    credit_card: "ক্রেডিট কার্ড ব্যালেন্স",
-    mortgage_12mo: "বন্ধক (আগামী ১২ মাস)",
-    rent_bills: "বকেয়া ভাড়া / ইউটিলিটি",
-    taxes_due: "বকেয়া কর",
-    business_liab: "ব্যবসায়িক দায়",
-    biz_loan: "ব্যবসায়িক ঋণ (১২ মাস)",
-    trade_payables: "বাণিজ্যিক দায় / সরবরাহকারী বিল",
-    salaries_payable: "বকেয়া বেতন",
-    advance_received: "গ্রাহকের অগ্রিম প্রাপ্তি",
-    your_zakah: "আপনার যাকাতের সারসংক্ষেপ",
-    hawl_note: "এক পূর্ণ হাওল (১ বছর) শেষে প্রযোজ্য",
-    not_eligible: "এখনো যোগ্য নয়",
-    eligible: "যাকাত ফরয ✓",
-    total_assets_label: "মোট সম্পদ",
-    before_deductions: "কর্তনের আগে",
-    total_liabilities_label: "মোট দায়",
-    eligible_deductions: "যোগ্য কর্তন",
-    net_wealth_label: "নিট যাকাতযোগ্য সম্পদ",
-    after_deductions: "সম্পদ − দায়",
-    nisab_threshold_label: "নিসাবের সীমা",
-    zakah_rate_label: "প্রযোজ্য হার",
-    zakah_due_label: "প্রদেয় যাকাত",
-    payable_label: "এ বছর পরিশোধযোগ্য",
-    wealth_vs_nisab: "আপনার সম্পদ বনাম নিসাব",
-    detailed_breakdown: "বিস্তারিত হিসাব",
-    cash_liquid_bd: "নগদ ও তরল সম্পদ",
-    precious_metals_bd: "মূল্যবান ধাতু",
-    investments_bd: "বিনিয়োগ",
-    business_bd: "ব্যবসায়িক সম্পদ",
-    liabilities_bd: "(-) দায়",
-    net_zakatable: "নিট যাকাতযোগ্য সম্পদ",
-    zakah_payable: "প্রদেয় যাকাত",
-    reset_btn: "সব মুছুন",
-    footer_tagline: "স্বচ্ছতা ও বিশ্বাসের সাথে উম্মাহর জন্য টুল তৈরি করছি",
-    designed_by: "ডিজাইন করেছেন",
-    privacy: "গোপনীয়তা নীতি",
-    open_source: "ওপেন সোর্স",
-    contact: "যোগাযোগ",
-    local_processing: "১০০% লোকাল প্রসেসিং",
-    no_server: "সার্ভার স্বাধীন",
-    open_src_badge: "ওপেন সোর্স",
-    pwa_title: "যাকাত ক্যালকুলেটর ইনস্টল করুন",
-    pwa_desc: "অফলাইনে ব্যবহারের জন্য হোম স্ক্রিনে যোগ করুন",
-    pwa_install: "অ্যাপ ইনস্টল করুন",
-    pwa_ios_hint: "Share ⬆ চাপুন, তারপর \"Add to Home Screen\" বেছে নিন",
-  }
-};
+let currentLang = localStorage.getItem('zakat_lang') || 'en';
+let L = {};   // active translation object — populated after script loads
+
+function loadLang(lang, callback) {
+  // Remove any previously injected translation script
+  const old = document.getElementById('lang-script');
+  if (old) old.remove();
+
+  const s = document.createElement('script');
+  s.id  = 'lang-script';
+  s.src = `translations/${lang}.js`;
+  s.onload = () => {
+    // Each translation file exposes LANG_DATA on window
+    L = window.LANG_DATA || {};
+    if (callback) callback();
+  };
+  s.onerror = () => {
+    console.warn(`[i18n] translations/${lang}.js not found, falling back to en`);
+    if (lang !== 'en') loadLang('en', callback);
+  };
+  document.head.appendChild(s);
+}
+
+function applyLang(lang) {
+  document.documentElement.lang = lang === 'bn' ? 'bn' : 'en';
+  document.body.classList.toggle('lang-bn', lang === 'bn');
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (L[key] !== undefined) el.textContent = L[key];
+  });
+  document.querySelectorAll('[data-i18n-btn]').forEach(el => {
+    const key = el.getAttribute('data-i18n-btn');
+    if (L[key] !== undefined) el.textContent = L[key];
+  });
+
+  // Sync eligible badge text with fresh L
+  const nwRaw    = parseFloat(document.getElementById('r_netWealth')?.textContent?.replace(/[^\d.]/g,'') || '0');
+  const nisabRaw = parseFloat(document.getElementById('r_nisabVal')?.textContent?.replace(/[^\d.]/g,'')  || '9999999');
+  const badge    = document.getElementById('eligibleBadge');
+  if (badge) badge.textContent = nwRaw >= nisabRaw ? (L.eligible || 'Zakah Obligatory ✓') : (L.not_eligible || 'Not Eligible Yet');
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('zakat_lang', lang);
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-bn').classList.toggle('active', lang === 'bn');
+  loadLang(lang, () => { applyLang(lang); calc(); });
+}
 
 /* ════════════════════════════════════════
    CONSTANTS
    ════════════════════════════════════════ */
-const TROY_OZ_TO_GRAM = 31.1035;   // 1 troy oz = 31.1035 g
-const BHORI_TO_GRAM   = 11.6638;   // 1 ভরি   = 11.6638 g  (BD standard)
-const CACHE_TTL_MS    = 24 * 60 * 60 * 1000; // 24 hours
-
+const TROY_OZ_TO_GRAM = 31.1035;
+const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
 const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', GBP:'£', AUD:'A$', INR:'₹' };
-
-// ── API endpoints ──
-// Both files are committed to the repo and updated daily by GitHub Actions.
-// The browser NEVER calls an external API directly — zero key exposure.
-// Metal prices API key stays in GitHub Secrets only.
-// Exchange rates API key stays in GitHub Secrets only.
-// index.html also has the metals key injected for a direct-API fallback
-// (see update-rates.yml), but primary path is always the static JSON files.
-const METALS_URL  = './data/metals.json';   // updated by GH Actions daily
-const RATES_URL   = './data/rates.json';    // updated by GH Actions daily
-
+const METALS_URL  = './data/metals.json';
+const RATES_URL   = './data/rates.json';
 
 /* ════════════════════════════════════════
    STATE
    ════════════════════════════════════════ */
-let currentLang     = localStorage.getItem('zakat_lang')     || 'en';
 let currentCurrency = localStorage.getItem('zakat_currency') || 'BDT';
-let nisabType       = 'silver';   // 'silver' | 'gold'
-let calendarType    = 'lunar';    // 'lunar'  | 'solar'
-let stockMethod     = 'trade';    // 'trade'  | 'longterm'
-let goldUnit        = 'gram';     // 'gram'   | 'bhori'  (BDT only)
-let silverUnit      = 'gram';     // same
+let nisabType       = 'silver';
+let calendarType    = 'lunar';
+let stockMethod     = 'trade';
 
-// Runtime price state
 let liveGoldUsdPerOz   = 0;
 let liveSilverUsdPerOz = 0;
-let fxRates            = {};      // { BDT: 121.5, SAR: 3.75, … }  USD-base
+let fxRates            = {};
 let pricesLive         = false;
 
 /* ════════════════════════════════════════
-   CACHE HELPERS  (localStorage, 24-h TTL)
+   CACHE HELPERS
    ════════════════════════════════════════ */
 function cacheWrite(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
-  } catch (_) {}
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
 }
 function cacheRead(key) {
   try {
@@ -1100,26 +818,18 @@ function cacheRead(key) {
 
 /* ════════════════════════════════════════
    LIVE PRICE FETCHING
-   ─────────────────────────────────────
-   1. Check localStorage cache (24-h TTL)
-   2. If stale/absent → fetch from trusted third-party data
-   3. FX → always read from ./data/rates.json
-      (committed daily by GitHub Actions,
-       so the browser never holds an API key)
    ════════════════════════════════════════ */
 async function fetchPrices(isManualRefresh = false) {
   const dot = document.getElementById('liveDot');
   const ts  = document.getElementById('priceTimestamp');
   const btn = document.getElementById('refreshBtn');
-  const L   = LANGS[currentLang] || LANGS.en;
 
   dot.className = 'live-dot loading';
-  ts.textContent = L.fetching;
+  ts.textContent = L.fetching || 'Fetching…';
   btn.disabled = true;
   btn.classList.add('spinning');
   setShimmer(true);
 
-  // ── 1. Try 24-h metals cache first (unless user hit Refresh) ──
   if (!isManualRefresh) {
     const cached = cacheRead('zakat_metals');
     if (cached) {
@@ -1129,22 +839,18 @@ async function fetchPrices(isManualRefresh = false) {
       if (fxCached) {
         fxRates    = fxCached;
         pricesLive = true;
-        onPricesReady(L, 'cache');
+        onPricesReady('cache');
         return;
       }
     }
   }
 
   try {
-    // ── 2. Fetch both static data files in parallel ──
-    // Primary path: read rates.json + metals.json (committed by GH Actions)
-    // This hits GitHub Pages CDN — fast, no API quota consumed
     const [ratesRes, metalsRes] = await Promise.allSettled([
       fetch(RATES_URL,  { cache: 'no-cache' }),
       fetch(METALS_URL, { cache: 'no-cache' })
     ]);
 
-    // ── Parse FX rates ──
     if (ratesRes.status === 'fulfilled' && ratesRes.value.ok) {
       const ratesData = await ratesRes.value.json();
       fxRates = ratesData.rates || ratesData;
@@ -1152,46 +858,34 @@ async function fetchPrices(isManualRefresh = false) {
       throw new Error('rates.json unavailable');
     }
 
-    // ── Parse metals from static file ──
     let metalsOk = false;
     if (metalsRes.status === 'fulfilled' && metalsRes.value.ok) {
       const metalsData = await metalsRes.value.json();
-      // metals.json shape: { gold_usd_per_oz: 3150, silver_usd_per_oz: 33.5 }
       if (metalsData.gold_usd_per_oz && metalsData.silver_usd_per_oz) {
         liveGoldUsdPerOz   = metalsData.gold_usd_per_oz;
         liveSilverUsdPerOz = metalsData.silver_usd_per_oz;
         metalsOk = true;
       }
     }
-
-    // ── If metals.json missing/stale, show error ──
-    if (!metalsOk) {
-      throw new Error('Metal prices unavailable');
-    }
+    if (!metalsOk) throw new Error('Metal prices unavailable');
 
     cacheWrite('zakat_fx', fxRates);
     pricesLive = true;
-    onPricesReady(L, 'live');
+    onPricesReady('live');
 
   } catch (err) {
     console.warn('Price fetch failed:', err.message);
-    // Final fallback: try stale cache even if TTL expired
-    const staleMetal = (() => {
-      try { const r = localStorage.getItem('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; }
-    })();
-    const staleFx = (() => {
-      try { const r = localStorage.getItem('zakat_fx'); return r ? JSON.parse(r).data : null; } catch(_) { return null; }
-    })();
-
+    const staleMetal = (() => { try { const r = localStorage.getItem('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    const staleFx    = (() => { try { const r = localStorage.getItem('zakat_fx');     return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
     if (staleMetal && staleFx) {
       liveGoldUsdPerOz   = staleMetal.gold;
       liveSilverUsdPerOz = staleMetal.silver;
       fxRates            = staleFx;
       pricesLive         = true;
-      onPricesReady(L, 'stale');
+      onPricesReady('stale');
     } else {
       dot.className  = 'live-dot error';
-      ts.textContent = L.price_error;
+      ts.textContent = L.price_error || 'Fetch failed — using manual input';
       btn.disabled   = false;
       btn.classList.remove('spinning');
       setShimmer(false);
@@ -1201,15 +895,14 @@ async function fetchPrices(isManualRefresh = false) {
   }
 }
 
-function onPricesReady(L, source) {
+function onPricesReady(source) {
   const dot = document.getElementById('liveDot');
   const ts  = document.getElementById('priceTimestamp');
   const btn = document.getElementById('refreshBtn');
-
   dot.className  = 'live-dot';
   const now = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
   const srcLabel = source === 'cache' ? ' (cached)' : source === 'stale' ? ' (stale cache)' : '';
-  ts.textContent = `${L.price_updated}: ${now}${srcLabel}`;
+  ts.textContent = `${L.price_updated || 'Updated'}: ${now}${srcLabel}`;
   btn.disabled   = false;
   btn.classList.remove('spinning');
   setShimmer(false);
@@ -1231,57 +924,10 @@ function showFallback() {
   document.getElementById('metalSourceBadge').className = 'source-badge error';
   document.getElementById('fxSourceBadge').className    = 'source-badge error';
 }
-
 function hideFallback() {
   document.getElementById('manualFallback').classList.remove('visible');
   document.getElementById('metalSourceBadge').className = 'source-badge active';
   document.getElementById('fxSourceBadge').className    = 'source-badge active';
-}
-
-/* ════════════════════════════════════════
-   BHORI UNIT TOGGLE  (BDT-only feature)
-   1 ভরি = 11.6638 g
-   Shown only when currency === 'BDT'
-   ════════════════════════════════════════ */
-function setGoldUnit(unit) {
-  goldUnit = unit;
-  document.getElementById('btn-gold-gram').classList.toggle('active',  unit === 'gram');
-  document.getElementById('btn-gold-bhori').classList.toggle('active', unit === 'bhori');
-  // Update all gold field labels & step
-  const isB = unit === 'bhori';
-  document.querySelectorAll('.gold-unit-label').forEach(el => {
-    el.textContent = isB ? (currentLang === 'bn' ? 'ভরি' : 'Bhori') : (currentLang === 'bn' ? 'গ্রাম' : 'grams');
-  });
-  calc();
-}
-
-function setSilverUnit(unit) {
-  silverUnit = unit;
-  document.getElementById('btn-silver-gram').classList.toggle('active',  unit === 'gram');
-  document.getElementById('btn-silver-bhori').classList.toggle('active', unit === 'bhori');
-  const isB = unit === 'bhori';
-  document.querySelectorAll('.silver-unit-label').forEach(el => {
-    el.textContent = isB ? (currentLang === 'bn' ? 'ভরি' : 'Bhori') : (currentLang === 'bn' ? 'গ্রাম' : 'grams');
-  });
-  calc();
-}
-
-function syncBhoriVisibility() {
-  const show = currentCurrency === 'BDT';
-  document.querySelectorAll('.bhori-toggle').forEach(el => {
-    el.style.display = show ? 'flex' : 'none';
-  });
-  // Reset units to gram when switching away from BDT
-  if (!show) {
-    goldUnit   = 'gram';
-    silverUnit = 'gram';
-    document.getElementById('btn-gold-gram')?.classList.add('active');
-    document.getElementById('btn-gold-bhori')?.classList.remove('active');
-    document.getElementById('btn-silver-gram')?.classList.add('active');
-    document.getElementById('btn-silver-bhori')?.classList.remove('active');
-    document.querySelectorAll('.gold-unit-label').forEach(el => el.textContent = 'grams');
-    document.querySelectorAll('.silver-unit-label').forEach(el => el.textContent = 'grams');
-  }
 }
 
 /* ════════════════════════════════════════
@@ -1301,40 +947,27 @@ function getConvertedPrices() {
   };
 }
 
-// Convert user-entered metal weight to GRAMS regardless of selected unit
-function toGrams(amount, unit) {
-  return unit === 'bhori' ? amount * BHORI_TO_GRAM : amount;
-}
-
 function updatePriceDisplay() {
   if (!pricesLive) return;
   const { goldPerGram, silverPerGram } = getConvertedPrices();
   const sym  = CURRENCY_SYMBOLS[currentCurrency] || currentCurrency;
   const rate = fxRates[currentCurrency] || 1;
-  const isBDT = currentCurrency === 'BDT';
 
   document.getElementById('goldUsdLabel').textContent   = `$${liveGoldUsdPerOz.toFixed(2)} USD/oz`;
   document.getElementById('silverUsdLabel').textContent = `$${liveSilverUsdPerOz.toFixed(2)} USD/oz`;
   document.getElementById('fxBaseLabel').textContent    = `USD → ${currentCurrency}`;
   document.getElementById('fxRateSub').textContent      = `1 USD = ${sym}${rate.toFixed(4)}`;
-
-  // Show per-gram price; if BDT also show per-bhori in sub label
   document.getElementById('goldPriceDisplay').textContent   = `${sym} ${goldPerGram.toFixed(2)}`;
   document.getElementById('silverPriceDisplay').textContent = `${sym} ${silverPerGram.toFixed(2)}`;
   document.getElementById('fxRateDisplay').textContent      = `${rate.toFixed(4)}`;
-
-  const goldBhoriPrice   = goldPerGram   * BHORI_TO_GRAM;
-  const silverBhoriPrice = silverPerGram * BHORI_TO_GRAM;
-  document.getElementById('goldPerGramSub').textContent =
-    isBDT ? `per gram · ${sym}${goldBhoriPrice.toFixed(0)} / ভরি` : `per gram (${currentCurrency})`;
-  document.getElementById('silverPerGramSub').textContent =
-    isBDT ? `per gram · ${sym}${silverBhoriPrice.toFixed(0)} / ভরি` : `per gram (${currentCurrency})`;
+  document.getElementById('goldPerGramSub').textContent   = `per gram (${currentCurrency})`;
+  document.getElementById('silverPerGramSub').textContent = `per gram (${currentCurrency})`;
 }
 
 function updateFxBanner() {
   if (!pricesLive || !Object.keys(fxRates).length) return;
-  const banner = document.getElementById('fxBanner');
   const strip  = document.getElementById('fxRatesStrip');
+  const banner = document.getElementById('fxBanner');
   const supported = ['BDT','USD','SAR','GBP','AUD','INR'];
   strip.innerHTML = supported.map(cur => {
     const r = fxRates[cur];
@@ -1346,54 +979,12 @@ function updateFxBanner() {
 }
 
 /* ════════════════════════════════════════
-   i18n
-   ════════════════════════════════════════ */
-function applyLang(lang) {
-  const L = LANGS[lang] || LANGS.en;
-  document.documentElement.lang = lang === 'bn' ? 'bn' : 'en';
-  document.body.classList.toggle('lang-bn', lang === 'bn');
-
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (L[key]) el.textContent = L[key];
-  });
-  document.querySelectorAll('[data-i18n-btn]').forEach(el => {
-    const key = el.getAttribute('data-i18n-btn');
-    if (L[key]) el.textContent = L[key];
-  });
-
-  // Re-sync bhori labels with current lang
-  const bhoriWord  = lang === 'bn' ? 'ভরি' : 'Bhori';
-  const gramWordG  = lang === 'bn' ? 'গ্রাম' : 'grams';
-  document.querySelectorAll('.gold-unit-label').forEach(el => {
-    el.textContent = goldUnit === 'bhori' ? bhoriWord : gramWordG;
-  });
-  document.querySelectorAll('.silver-unit-label').forEach(el => {
-    el.textContent = silverUnit === 'bhori' ? bhoriWord : gramWordG;
-  });
-
-  const nwRaw    = parseFloat(document.getElementById('r_netWealth')?.textContent?.replace(/[^\d.]/g,'') || '0');
-  const nisabRaw = parseFloat(document.getElementById('r_nisabVal')?.textContent?.replace(/[^\d.]/g,'')  || '9999999');
-  document.getElementById('eligibleBadge').textContent = nwRaw >= nisabRaw ? L.eligible : L.not_eligible;
-}
-
-function setLang(lang) {
-  currentLang = lang;
-  localStorage.setItem('zakat_lang', lang);
-  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-  document.getElementById('btn-bn').classList.toggle('active', lang === 'bn');
-  applyLang(lang);
-  calc();
-}
-
-/* ════════════════════════════════════════
    CURRENCY
    ════════════════════════════════════════ */
 function setCurrency(cur) {
   currentCurrency = cur;
   localStorage.setItem('zakat_currency', cur);
   updateCurrencySymbols();
-  syncBhoriVisibility();
   updatePriceDisplay();
   updateFxBanner();
   calc();
@@ -1423,21 +1014,18 @@ function setNisabType(type) {
   document.getElementById('btn-gold').classList.toggle('active',   type === 'gold');
   calc();
 }
-
 function setCalendar(type) {
   calendarType = type;
   document.getElementById('btn-lunar').classList.toggle('active', type === 'lunar');
   document.getElementById('btn-solar').classList.toggle('active', type === 'solar');
   calc();
 }
-
 function selectRadio(group, val, labelEl) {
   stockMethod = val;
-  document.querySelectorAll(`#stockMethodGroup .radio-btn`).forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#stockMethodGroup .radio-btn').forEach(b => b.classList.remove('selected'));
   labelEl.classList.add('selected');
   calc();
 }
-
 function toggleSection(id) {
   document.getElementById(id).classList.toggle('open');
 }
@@ -1452,54 +1040,48 @@ function v(id) {
 function calc() {
   const { goldPerGram, silverPerGram } = getConvertedPrices();
 
-  // ── Section A: Cash ──
+  // Section A: Cash
   const cashTotal =
     v('f_cashOnHand') + v('f_cashForeign') +
     v('f_bankSavings') + v('f_bankCurrent') + v('f_bankFD') +
-    v('f_bkash') + v('f_upay') + v('f_rocket') + v('f_pathaoPay') +
-    v('f_paypal') + v('f_venmo') +
+    v('f_bkash')  + v('f_nagad') +
+    v('f_upay')   + v('f_cellfin') +
+    v('f_rocket') + v('f_paypal') + v('f_othersWallet') +
     v('f_moneyLent') + v('f_salaryDue');
 
-  // ── Section B: Metals (convert bhori → grams before pricing) ──
-  const gold24kGrams  = toGrams(v('f_gold24k'),   goldUnit);
-  const gold22kGrams  = toGrams(v('f_gold22k'),   goldUnit);
-  const gold18kGrams  = toGrams(v('f_gold18k'),   goldUnit);
-  const gold21kGrams  = toGrams(v('f_gold21k'),   goldUnit);
-  const goldCoinsGrams = toGrams(v('f_goldCoins'), goldUnit);
-
+  // Section B: Metals (always in grams)
   const gold24kEquiv =
-    gold24kGrams   * (24/24) +
-    gold22kGrams   * (22/24) +
-    gold18kGrams   * (18/24) +
-    gold21kGrams   * (21/24) +
-    goldCoinsGrams * 1;
+    v('f_gold24k')   * (24/24) +
+    v('f_gold22k')   * (22/24) +
+    v('f_gold18k')   * (18/24) +
+    v('f_gold21k')   * (21/24) +
+    v('f_goldCoins') * 1;
 
-  const goldValue      = gold24kEquiv * goldPerGram;
-  const silverGrams    = toGrams(v('f_silverGrams'),   silverUnit)
-                       + toGrams(v('f_silverBullion'),  silverUnit);
-  const silverValue    = silverGrams * silverPerGram;
-  const metalTotal     = goldValue + silverValue;
+  const goldValue   = gold24kEquiv * goldPerGram;
+  const silverGrams = v('f_silverGrams') + v('f_silverBullion');
+  const silverValue = silverGrams * silverPerGram;
+  const metalTotal  = goldValue + silverValue;
 
   document.getElementById('goldValTotal').textContent      = fmt(goldValue);
   document.getElementById('silverValTotal').textContent    = fmt(silverValue);
   document.getElementById('metalValTotalDisp').textContent = fmt(metalTotal);
 
-  // ── Section C: Investments ──
-  const rawStocks  = v('f_dseStocks') + v('f_intlStocks');
-  const rawMutual  = v('f_mutualFunds');
-  const stocksVal  = stockMethod === 'trade' ? rawStocks      : rawStocks * 0.25;
-  const mutualVal  = stockMethod === 'trade' ? rawMutual      : rawMutual * 0.25;
-  const cryptoTotal   = v('f_btc') + v('f_eth') + v('f_otherCrypto');
-  const pensionTotal  = v('f_gpf') + v('f_nsc') + v('f_bonds') + v('f_otherInvest');
-  const investTotal   = stocksVal + mutualVal + cryptoTotal + pensionTotal;
+  // Section C: Investments
+  const rawStocks = v('f_dseStocks') + v('f_intlStocks');
+  const rawMutual = v('f_mutualFunds');
+  const stocksVal = stockMethod === 'trade' ? rawStocks : rawStocks * 0.25;
+  const mutualVal = stockMethod === 'trade' ? rawMutual : rawMutual * 0.25;
+  const cryptoTotal  = v('f_btc') + v('f_eth') + v('f_otherCrypto');
+  const pensionTotal = v('f_gpf') + v('f_nsc') + v('f_bonds') + v('f_otherInvest');
+  const investTotal  = stocksVal + mutualVal + cryptoTotal + pensionTotal;
 
-  // ── Section D: Business ──
+  // Section D: Business
   const bizLiquid      = v('f_bizCash') + v('f_bizBank') + v('f_pettyCash');
   const bizInventory   = v('f_finishedGoods') + v('f_rawMaterials') + v('f_wip') + v('f_tradeGoods');
   const bizReceivables = v('f_tradeRec') + v('f_advancePaid') + v('f_secDeposit');
   const bizTotal       = bizLiquid + bizInventory + bizReceivables;
 
-  // ── Section E: Liabilities ──
+  // Section E: Liabilities
   const personalLiab =
     v('f_personalLoan') + v('f_creditCard') + v('f_mortgage12') +
     v('f_rentBills')    + v('f_taxesDue');
@@ -1507,43 +1089,35 @@ function calc() {
     v('f_bizLoan') + v('f_tradePayables') + v('f_salariesPayable') + v('f_advanceReceived');
   const liabTotal = personalLiab + bizLiab;
 
-  // ── Totals ──
+  // Totals
   const totalAssets = cashTotal + metalTotal + investTotal + bizTotal;
   const netWealth   = Math.max(0, totalAssets - liabTotal);
 
-  // ── Nisab ──
-  // Nisab weights are always in GRAMS internally
+  // Nisab
   const SILVER_NISAB_G = 612.36;
   const GOLD_NISAB_G   = 87.48;
   const nisabValue = nisabType === 'silver'
     ? SILVER_NISAB_G * silverPerGram
     : GOLD_NISAB_G   * goldPerGram;
 
-  // Display nisab weight in bhori too when BDT selected
-  const isBDT = currentCurrency === 'BDT';
-  const silverNisabBhori = (SILVER_NISAB_G / BHORI_TO_GRAM).toFixed(2);
-  const goldNisabBhori   = (GOLD_NISAB_G   / BHORI_TO_GRAM).toFixed(2);
-  const metalLabel = nisabType === 'silver'
-    ? (isBDT ? `612.36g / ${silverNisabBhori} ভরি Silver` : '612.36g Silver')
-    : (isBDT ? `87.48g / ${goldNisabBhori} ভরি Gold`      : '87.48g Gold');
-
+  const metalLabel = nisabType === 'silver' ? '612.36g Silver' : '87.48g Gold';
   document.getElementById('nisabMetalDisp').textContent = metalLabel;
   document.getElementById('nisabValueDisp').textContent = fmt(nisabValue);
 
-  // ── Zakah Rate ──
-  const zakahRate     = calendarType === 'lunar' ? 0.025    : 0.02577;
-  const rateLabel     = calendarType === 'lunar' ? '2.5%'   : '2.577%';
+  // Zakah rate
+  const zakahRate     = calendarType === 'lunar' ? 0.025 : 0.02577;
+  const rateLabel     = calendarType === 'lunar' ? '2.5%' : '2.577%';
   const calendarLabel = calendarType === 'lunar' ? 'Lunar (Hijri)' : 'Solar (Gregorian)';
   document.getElementById('zakahRateDisp').textContent = rateLabel;
 
-  // ── Eligibility & Zakah ──
+  // Eligibility
   const isEligible = nisabValue > 0 && netWealth >= nisabValue;
   const zakahDue   = isEligible ? netWealth * zakahRate : 0;
 
-  // ── Progress ──
-  const fields = [
+  // Progress bar
+  const fieldIds = [
     'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
-    'f_bkash','f_upay','f_rocket','f_pathaoPay','f_paypal','f_venmo',
+    'f_bkash','f_nagad','f_upay','f_cellfin','f_rocket','f_paypal','f_othersWallet',
     'f_moneyLent','f_salaryDue',
     'f_gold24k','f_gold22k','f_gold18k','f_gold21k','f_goldCoins',
     'f_silverGrams','f_silverBullion',
@@ -1554,17 +1128,18 @@ function calc() {
     'f_tradeRec','f_advancePaid','f_secDeposit',
     'f_personalLoan','f_creditCard','f_mortgage12','f_rentBills','f_taxesDue',
     'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
-  ].filter(id => v(id) > 0).length;
-  document.getElementById('progressFill').style.width = Math.min(100, Math.round(fields / 48 * 100)) + '%';
+  ];
+  const filledCount = fieldIds.filter(id => v(id) > 0).length;
+  document.getElementById('progressFill').style.width = Math.min(100, Math.round(filledCount / fieldIds.length * 100)) + '%';
 
-  // ── Section Totals ──
+  // Section totals
   document.getElementById('tot-cash').textContent   = fmt(cashTotal);
   document.getElementById('tot-metals').textContent = fmt(metalTotal);
   document.getElementById('tot-invest').textContent = fmt(investTotal);
   document.getElementById('tot-biz').textContent    = fmt(bizTotal);
   document.getElementById('tot-liab').textContent   = fmt(liabTotal);
 
-  // ── Results Panel ──
+  // Results panel
   document.getElementById('r_totalAssets').textContent = fmt(totalAssets);
   document.getElementById('r_totalLiab').textContent   = fmt(liabTotal);
   document.getElementById('r_netWealth').textContent   = fmt(netWealth);
@@ -1578,13 +1153,12 @@ function calc() {
   document.getElementById('nisabBarFill').style.width = pct + '%';
   document.getElementById('nisabPct').textContent     = pct.toFixed(1) + '%';
 
-  const L = LANGS[currentLang] || LANGS.en;
   const badge = document.getElementById('eligibleBadge');
-  badge.textContent = isEligible ? L.eligible : L.not_eligible;
+  badge.textContent = isEligible ? (L.eligible || 'Zakah Obligatory ✓') : (L.not_eligible || 'Not Eligible Yet');
   badge.className   = 'results-eligible ' + (isEligible ? 'yes' : 'no');
   document.getElementById('r_netWealth').className = 'result-stat-value ' + (isEligible ? 'green' : '');
 
-  // ── Breakdown ──
+  // Breakdown
   document.getElementById('bd_cash').textContent   = fmt(cashTotal);
   document.getElementById('bd_metals').textContent = fmt(metalTotal);
   document.getElementById('bd_invest').textContent = fmt(investTotal);
@@ -1605,8 +1179,6 @@ function resetAll() {
 /* ════════════════════════════════════════
    PWA — Service Worker & Install Prompt
    ════════════════════════════════════════ */
-
-// ── Service Worker registration ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
@@ -1615,95 +1187,73 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ── Install prompt handling ──
 let deferredPrompt = null;
-const banner       = document.getElementById('pwaBanner');
-const btnInstall   = document.getElementById('pwaBtnInstall');
-const btnDismiss   = document.getElementById('pwaBtnDismiss');
-const iosHint      = document.getElementById('pwaIosHint');
+const banner     = document.getElementById('pwaBanner');
+const btnInstall = document.getElementById('pwaBtnInstall');
+const btnDismiss = document.getElementById('pwaBtnDismiss');
+const iosHint    = document.getElementById('pwaIosHint');
 
-// Detect iOS Safari (no beforeinstallprompt; needs manual share flow)
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) &&
               /safari/i.test(navigator.userAgent) &&
               !('standalone' in navigator && navigator.standalone);
-
-// Don't show if already installed
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      navigator.standalone === true;
 
-// Respect user dismissal (stored for 30 days)
 function wasDismissed() {
   const ts = parseInt(localStorage.getItem('pwa_dismissed') || '0', 10);
   return ts && (Date.now() - ts) < 30 * 24 * 60 * 60 * 1000;
 }
+function showBanner() { if (isStandalone || wasDismissed()) return; banner.hidden = false; if (isIos) iosHint.hidden = false; }
+function hideBanner()  { banner.hidden = true; }
 
-function showBanner() {
-  if (isStandalone || wasDismissed()) return;
-  banner.hidden = false;
-  if (isIos) iosHint.hidden = false;
-}
-
-function hideBanner() {
-  banner.hidden = true;
-}
-
-// Chrome / Edge / Samsung Browser — native install prompt
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Small delay so page settles first
-  setTimeout(showBanner, 3000);
-});
-
-// Install button click
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; setTimeout(showBanner, 3000); });
 btnInstall?.addEventListener('click', async () => {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      hideBanner();
-    }
+    if (outcome === 'accepted') hideBanner();
     deferredPrompt = null;
   }
 });
+btnDismiss?.addEventListener('click', () => { localStorage.setItem('pwa_dismissed', String(Date.now())); hideBanner(); });
+if (isIos && !isStandalone) { setTimeout(showBanner, 3500); if (btnInstall) btnInstall.hidden = true; }
+window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = null; });
 
-// Dismiss button
-btnDismiss?.addEventListener('click', () => {
-  localStorage.setItem('pwa_dismissed', String(Date.now()));
-  hideBanner();
-});
-
-// iOS: show banner after delay (no native prompt available)
-if (isIos && !isStandalone) {
-  setTimeout(showBanner, 3500);
-  btnInstall.hidden = true; // iOS can't trigger programmatic install
-}
-
-// Hide banner once installed
-window.addEventListener('appinstalled', () => {
-  hideBanner();
-  deferredPrompt = null;
-});
-
-
+/* ════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   const savedCur = localStorage.getItem('zakat_currency') || 'BDT';
   document.getElementById('currencySelect').value = savedCur;
   currentCurrency = savedCur;
   updateCurrencySymbols();
-  syncBhoriVisibility();
 
   document.getElementById('footerYear').textContent = new Date().getFullYear();
 
-  applyLang(currentLang);
-  if (currentLang === 'bn') {
-    document.getElementById('btn-en').classList.remove('active');
-    document.getElementById('btn-bn').classList.add('active');
-  }
+  // Set lang toggle button state
+  document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
+  document.getElementById('btn-bn').classList.toggle('active', currentLang === 'bn');
 
-  calc();
-  fetchPrices();
+  // Load translation first, then initialise everything
+  loadLang(currentLang, () => {
+    applyLang(currentLang);
+    calc();
+    fetchPrices();
+  });
 });
 </script>
+
+<!-- One small style addition for the price disclaimer text -->
+<style>
+.price-disclaimer {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  line-height: 1.5;
+  margin: 12px 4px 0;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border, #e5e5e5);
+  opacity: 0.85;
+}
+</style>
 </body>
 </html>
