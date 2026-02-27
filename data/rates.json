@@ -1,0 +1,23 @@
+{
+  "base": "USD",
+  "date": "2026-02-27",
+  "updated": "2026-02-27T06:00:00Z",
+  "source": "ExchangeRate-API",
+  "_note": "This file is auto-updated daily by GitHub Actions (update-rates.yml). Do not edit manually.",
+  "rates": {
+    "AED": 3.6725,
+    "AUD": 1.5821,
+    "BDT": 121.50,
+    "CAD": 1.3642,
+    "EUR": 0.9201,
+    "GBP": 0.7893,
+    "INR": 84.92,
+    "MYR": 4.4521,
+    "PKR": 278.50,
+    "QAR": 3.6400,
+    "SAR": 3.7500,
+    "SGD": 1.3401,
+    "TRY": 36.80,
+    "USD": 1.0000
+  }
+}
