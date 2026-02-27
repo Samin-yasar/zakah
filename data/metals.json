@@ -1,0 +1,9 @@
+{
+  "date": "2026-02-27",
+  "updated": "2026-02-27T06:00:00Z",
+  "source": "Metals.dev",
+  "base": "USD",
+  "_note": "Auto-updated daily by GitHub Actions (update-rates.yml). Do not edit manually.",
+  "gold_usd_per_oz": 3150.00,
+  "silver_usd_per_oz": 33.50
+}
