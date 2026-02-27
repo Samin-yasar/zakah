@@ -3,15 +3,15 @@
    Samin's Initiatives
    ════════════════════════════════════════ */
 
-const CACHE_NAME   = 'zakah-calc-v3';
-const DATA_CACHE   = 'zakah-data-v3';
+const CACHE_NAME   = 'zakah-calc-v4';
+const DATA_CACHE   = 'zakah-data-v4';
 
-// Core shell 
+// Core shell
 const SHELL_ASSETS = [
   './index.html',
   './styles.css',
-   './translations/en.js'
-   './translations/bn.js'
+  './translations/en.js',   // ← fixed: missing comma was here (caused syntax error)
+  './translations/bn.js',
   './manifest.json',
   'https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap',
 ];
@@ -93,7 +93,7 @@ async function cacheFirstWithNetwork(request, cacheName) {
     }
     return response;
   } catch {
-    return await caches.match('./zakah-calculator.html') ||
+    return await caches.match('./index.html') ||   // ← fixed: was './zakah-calculator.html' (file does not exist)
       new Response('App is offline', { status: 503 });
   }
 }
