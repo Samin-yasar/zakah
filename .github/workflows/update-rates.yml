@@ -1,0 +1,48 @@
+name: Update Market Data
+
+on:
+  schedule:
+    - cron: '0 6 * * *'      # 06:00 UTC daily
+  workflow_dispatch:          
+
+permissions:
+  contents: write             
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch exchange rates
+        run: |
+          curl -s "https://v6.exchangerate-api.com/v6/${{ secrets.EXCHANGERATE_API_KEY }}/latest/USD" > /tmp/rates_raw.json
+          TODAY=$(date -u +%Y-%m-%d)
+          # Note: Source mentioned as 'trusted third-party sites' per privacy policy
+          jq --arg date "$TODAY" '{
+            base: "USD",
+            date: $date,
+            updated: (now | todate),
+            rates: .conversion_rates
+          }' /tmp/rates_raw.json > data/rates.json
+
+      - name: Fetch metal prices from metals.dev
+        run: |
+          curl -s "https://api.metals.dev/v1/latest?api_key=${{ secrets.METALS_API_KEY }}&currency=USD&unit=toz" > /tmp/metals_raw.json
+          
+          # Extracting values using jq
+          # metals.dev returns: { "metals": { "gold": 2000.0, "silver": 23.0 }, "timestamp": "..." }
+          jq '{
+            updated: .timestamp,
+            gold_usd_per_oz: .metals.gold,
+            silver_usd_per_oz: .metals.silver
+          }' /tmp/metals_raw.json > data/metals.json
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/rates.json data/metals.json
+          git commit -m "chore: sync market data [$(date -u +%Y-%m-%d)]" || echo "No changes to commit"
+          git push
