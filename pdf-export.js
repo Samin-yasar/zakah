@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    pdf-export.js — Zakah Calculator PDF Report Generator
    ═══════════════════════════════════════════════════════════ */
-async function fetchReportDate() {
+async function fetchReportDate() { 
   let userTZ = 'UTC';
   try {
     userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
