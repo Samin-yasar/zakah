@@ -37,6 +37,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap" />
 <link rel="stylesheet" href="styles.css" />
+
+<!-- jsPDF — loaded early so it's ready when user clicks Export PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body>
 
@@ -62,6 +65,10 @@
         <option value="AUD">A$ AUD</option>
         <option value="INR">₹ INR</option>
       </select>
+      <!-- Share button -->
+      <button class="btn-icon-header" id="shareBtn" onclick="openShareModal()" title="Share">
+        ↑
+      </button>
     </div>
   </div>
 </header>
@@ -75,7 +82,7 @@
     <h2 data-i18n="hero_title">Calculate Your Zakah with Precision</h2>
     <p data-i18n="hero_desc">A comprehensive, scholarly-accurate calculator covering all asset categories including digital wallets, investments, and business assets.</p>
     <div class="security-banner">
-      🔒 <span data-i18n="security_note">100% Secure & Open-Source — All data processed locally in your browser. No server. No data shared.</span>
+      🔒 <span data-i18n="security_note">100% Secure &amp; Open-Source — All data processed locally in your browser. No server. No data shared.</span>
     </div>
   </div>
 
@@ -98,7 +105,7 @@
         <label data-i18n="nisab_based_on">Nisab Based On</label>
         <div class="pill-toggle" style="width:100%; justify-content:center;">
           <button onclick="setNisabType('silver')" id="btn-silver" class="active" data-i18n-btn="silver_nisab">Silver (Recommended)</button>
-          <button onclick="setNisabType('gold')" id="btn-gold" data-i18n-btn="gold_nisab">Gold</button>
+          <button onclick="setNisabType('gold')"   id="btn-gold"   data-i18n-btn="gold_nisab">Gold</button>
         </div>
       </div>
       <div class="setting-group">
@@ -139,7 +146,6 @@
             </button>
           </div>
         </div>
-        <!-- 3-cell grid: removed "Data Source" cell -->
         <div class="price-grid" style="grid-template-columns: repeat(3, 1fr);">
           <div class="price-cell">
             <div class="price-cell-label">🥇 <span data-i18n="gold_24k_label">Gold 24k</span></div>
@@ -160,11 +166,9 @@
             <div class="price-cell-sub" id="fxRateSub">1 USD = ?</div>
           </div>
         </div>
-        <!-- Price data disclaimer -->
         <p class="price-disclaimer" data-i18n="price_disclaimer">Metal and currency rates are sourced from independent third-party market data providers. Samin's Initiatives does not own, control, or warrant the accuracy of this information. All figures are indicative and intended solely for Zakah estimation purposes.</p>
       </div>
 
-      <!-- API source attribution + FX rates strip -->
       <div class="fx-banner" id="fxBanner" style="display:none;">
         <div class="fx-rates" id="fxRatesStrip"></div>
         <div class="api-sources">
@@ -173,7 +177,6 @@
         </div>
       </div>
 
-      <!-- MANUAL FALLBACK — shown only on API failure -->
       <div class="manual-fallback" id="manualFallback">
         <div class="manual-fallback-header">
           ⚠ <span data-i18n="fallback_header">Live prices unavailable — please enter current prices manually</span>
@@ -207,7 +210,7 @@
       <div class="section-header-left">
         <div class="section-icon icon-cash">💵</div>
         <div>
-          <div class="section-title" data-i18n="sec_cash_title">Section A — Cash & Liquid Assets</div>
+          <div class="section-title" data-i18n="sec_cash_title">Section A — Cash &amp; Liquid Assets</div>
           <div class="section-subtitle" data-i18n="sec_cash_sub">Physical cash, bank accounts, digital wallets</div>
         </div>
       </div>
@@ -220,11 +223,11 @@
       <div class="sub-heading" data-i18n="physical_cash">Physical Cash</div>
       <div class="field-group">
         <div class="field">
-          <label><span data-i18n="cash_on_hand">Cash on Hand</span> <span class="tooltip-icon" data-tip="Physical cash you keep at home or in your wallet.">?</span></label>
+          <label><span data-i18n="cash_on_hand">Cash on Hand</span> <span class="tooltip-icon" data-tip-key="tip_cash_on_hand" data-tip="Physical cash you keep at home or in your wallet.">?</span></label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_cashOnHand" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label><span data-i18n="cash_foreign">Foreign Currency</span> <span class="tooltip-icon" data-tip="Foreign currency you hold, converted to your selected currency.">?</span></label>
+          <label><span data-i18n="cash_foreign">Foreign Currency</span> <span class="tooltip-icon" data-tip-key="tip_cash_foreign" data-tip="Foreign currency you hold, converted to your selected currency.">?</span></label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_cashForeign" value="0" min="0" oninput="calc()" /></div>
         </div>
       </div>
@@ -240,39 +243,20 @@
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bankCurrent" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label><span data-i18n="fd_savings">FDR / Fixed Deposits</span> <span class="tooltip-icon" data-tip="Principal amount only. Exclude interest (Riba) — donate it separately.">?</span></label>
+          <label><span data-i18n="fd_savings">FDR / Fixed Deposits</span> <span class="tooltip-icon" data-tip-key="tip_fdr" data-tip="Principal amount only. Exclude interest (Riba) — donate it separately.">?</span></label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bankFD" value="0" min="0" oninput="calc()" /></div>
         </div>
       </div>
       <p class="field-note" data-i18n="riba_note">⚠ Exclude any accrued interest (Riba) from bank accounts. Interest must be donated separately, not counted as Zakah.</p>
 
-      <!-- DIGITAL WALLETS — split into individual entities -->
       <div class="sub-heading" data-i18n="digital_wallets">Digital Wallets</div>
       <div class="field-group triple">
-        <div class="field">
-          <label>bKash</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bkash" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Nagad</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_nagad" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Upay</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_upay" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Cellfin</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_cellfin" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Rocket / DBBL</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rocket" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>PayPal / Payoneer</label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_paypal" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label>bKash</label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bkash"   value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label>Nagad</label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_nagad"   value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label>Upay</label> <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_upay"    value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label>Cellfin</label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_cellfin" value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label>Rocket / DBBL</label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rocket"  value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label>PayPal / Payoneer</label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_paypal"  value="0" min="0" oninput="calc()" /></div></div>
         <div class="field">
           <label><span data-i18n="others_wallet">Others</span></label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_othersWallet" value="0" min="0" oninput="calc()" /></div>
@@ -282,11 +266,11 @@
       <div class="sub-heading" data-i18n="receivables_personal">Personal Receivables</div>
       <div class="field-group">
         <div class="field">
-          <label><span data-i18n="money_lent">Money Lent to Others</span> <span class="tooltip-icon" data-tip="Money you've lent that is likely to be returned. Doubtful debts may be excluded.">?</span></label>
+          <label><span data-i18n="money_lent">Money Lent to Others</span> <span class="tooltip-icon" data-tip-key="tip_money_lent" data-tip="Money you've lent that is likely to be returned. Doubtful debts may be excluded.">?</span></label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_moneyLent" value="0" min="0" oninput="calc()" /></div>
         </div>
         <div class="field">
-          <label><span data-i18n="salary_due">Salary / Bonus Due</span> <span class="tooltip-icon" data-tip="Unpaid salary or bonus owed to you that will be received.">?</span></label>
+          <label><span data-i18n="salary_due">Salary / Bonus Due</span> <span class="tooltip-icon" data-tip-key="tip_salary_due" data-tip="Unpaid salary or bonus owed to you that will be received.">?</span></label>
           <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_salaryDue" value="0" min="0" oninput="calc()" /></div>
         </div>
       </div>
@@ -299,7 +283,7 @@
       <div class="section-header-left">
         <div class="section-icon icon-metals">🥇</div>
         <div>
-          <div class="section-title" data-i18n="sec_metals_title">Section B — Precious Metals & Jewelry</div>
+          <div class="section-title" data-i18n="sec_metals_title">Section B — Precious Metals &amp; Jewelry</div>
           <div class="section-subtitle" data-i18n="sec_metals_sub">Gold, silver, bullion, jewelry</div>
         </div>
       </div>
@@ -313,22 +297,10 @@
 
       <div class="sub-heading" data-i18n="gold_heading">Gold</div>
       <div class="field-group triple" style="margin-top:10px;">
-        <div class="field">
-          <label>Gold 24k (grams)</label>
-          <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold24k" value="0" min="0" step="0.001" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Gold 22k (grams)</label>
-          <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold22k" value="0" min="0" step="0.001" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Gold 18k (grams)</label>
-          <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold18k" value="0" min="0" step="0.001" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Gold 21k (grams)</label>
-          <div class="input-wrap"><input type="number" class="no-prefix" id="f_gold21k" value="0" min="0" step="0.001" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label>Gold 24k (grams)</label><div class="input-wrap"><input type="number" class="no-prefix" id="f_gold24k"   value="0" min="0" step="0.001" oninput="calc()" /></div></div>
+        <div class="field"><label>Gold 22k (grams)</label><div class="input-wrap"><input type="number" class="no-prefix" id="f_gold22k"   value="0" min="0" step="0.001" oninput="calc()" /></div></div>
+        <div class="field"><label>Gold 18k (grams)</label><div class="input-wrap"><input type="number" class="no-prefix" id="f_gold18k"   value="0" min="0" step="0.001" oninput="calc()" /></div></div>
+        <div class="field"><label>Gold 21k (grams)</label><div class="input-wrap"><input type="number" class="no-prefix" id="f_gold21k"   value="0" min="0" step="0.001" oninput="calc()" /></div></div>
         <div class="field">
           <label><span data-i18n="gold_coins">Gold Coins / Bars (24k, grams)</span></label>
           <div class="input-wrap"><input type="number" class="no-prefix" id="f_goldCoins" value="0" min="0" step="0.001" oninput="calc()" /></div>
@@ -340,7 +312,7 @@
       <div class="field-group" style="margin-top:10px;">
         <div class="field">
           <label><span data-i18n="silver_physical">Silver (grams)</span></label>
-          <div class="input-wrap"><input type="number" class="no-prefix" id="f_silverGrams" value="0" min="0" step="0.001" oninput="calc()" /></div>
+          <div class="input-wrap"><input type="number" class="no-prefix" id="f_silverGrams"   value="0" min="0" step="0.001" oninput="calc()" /></div>
         </div>
         <div class="field">
           <label><span data-i18n="silver_coins">Silver Coins / Bullion (grams)</span></label>
@@ -362,7 +334,7 @@
       <div class="section-header-left">
         <div class="section-icon icon-invest">📈</div>
         <div>
-          <div class="section-title" data-i18n="sec_invest_title">Section C — Investments & Financial Assets</div>
+          <div class="section-title" data-i18n="sec_invest_title">Section C — Investments &amp; Financial Assets</div>
           <div class="section-subtitle" data-i18n="sec_invest_sub">Stocks, mutual funds, crypto, pension</div>
         </div>
       </div>
@@ -372,8 +344,7 @@
       </div>
     </div>
     <div class="section-body">
-
-      <div class="sub-heading" data-i18n="stocks_heading">Stocks & Shares</div>
+      <div class="sub-heading" data-i18n="stocks_heading">Stocks &amp; Shares</div>
       <label style="font-size:12px;color:var(--text-muted);margin-bottom:6px;display:block;" data-i18n="stock_method_label">Calculation Method</label>
       <div class="radio-group" id="stockMethodGroup">
         <label class="radio-btn selected" onclick="selectRadio('stockMethod','trade',this)">
@@ -390,56 +361,32 @@
       <div class="info-box" id="stockMethodInfo" data-i18n="method_trade_info">Short-term traders: Pay 2.5% on full portfolio value. Long-term investors: Pay 2.5% on 25% of portfolio (proxy for zakatable assets of the company).</div>
 
       <div class="field-group triple">
+        <div class="field"><label><span data-i18n="dse_stocks">DSE Stocks (Bangladesh)</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_dseStocks"   value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="international_stocks">International Stocks</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_intlStocks"  value="0" min="0" oninput="calc()" /></div></div>
         <div class="field">
-          <label><span data-i18n="dse_stocks">DSE Stocks (Bangladesh)</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_dseStocks" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="international_stocks">International Stocks</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_intlStocks" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="mutual_funds">Mutual Funds / ETFs</span> <span class="tooltip-icon" data-tip="For Islamic funds, 100% is Zakatable. For conventional funds, use 25% proxy on NAV.">?</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_mutualFunds" value="0" min="0" oninput="calc()" /></div>
+          <label><span data-i18n="mutual_funds">Mutual Funds / ETFs</span> <span class="tooltip-icon" data-tip-key="tip_mutual_funds" data-tip="For Islamic funds, 100% is Zakatable. For conventional funds, use 25% proxy on NAV.">?</span></label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_mutualFunds"  value="0" min="0" oninput="calc()" /></div>
         </div>
       </div>
 
       <div class="sub-heading" data-i18n="crypto_heading">Cryptocurrency</div>
       <div class="info-box" data-i18n="crypto_note">Scholars differ on crypto. Most contemporary scholars consider it Zakatable at market value. Include only holdings held for over a lunar year.</div>
       <div class="field-group triple">
-        <div class="field">
-          <label>Bitcoin (BTC) <span data-i18n="market_val_label">Market Value</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_btc" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label>Ethereum (ETH) <span data-i18n="market_val_label">Market Value</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_eth" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="other_crypto">Other Crypto</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_otherCrypto" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label>Bitcoin (BTC) <span data-i18n="market_val_label">Market Value</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_btc"          value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label>Ethereum (ETH) <span data-i18n="market_val_label">Market Value</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_eth"          value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="other_crypto">Other Crypto</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_otherCrypto"  value="0" min="0" oninput="calc()" /></div></div>
       </div>
 
-      <div class="sub-heading" data-i18n="pension_heading">Provident Fund & Pension</div>
+      <div class="sub-heading" data-i18n="pension_heading">Provident Fund &amp; Pension</div>
       <div class="info-box" data-i18n="pension_note">Include only the portion you can access. Many scholars say include your own contributions; employer portion upon receipt. Verify with your PF statement.</div>
       <div class="field-group">
+        <div class="field"><label><span data-i18n="provident_fund">GPF / Provident Fund</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_gpf"          value="0" min="0" oninput="calc()" /></div></div>
         <div class="field">
-          <label><span data-i18n="provident_fund">GPF / Provident Fund</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_gpf" value="0" min="0" oninput="calc()" /></div>
+          <label><span data-i18n="sanchayapatra">Sanchayapatra / NSC</span> <span class="tooltip-icon" data-tip-key="tip_nsc" data-tip="Bangladesh National Savings Certificate. Principal amount is Zakatable.">?</span></label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_nsc"          value="0" min="0" oninput="calc()" /></div>
         </div>
-        <div class="field">
-          <label><span data-i18n="sanchayapatra">Sanchayapatra / NSC</span> <span class="tooltip-icon" data-tip="Bangladesh National Savings Certificate. Principal amount is Zakatable.">?</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_nsc" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="bonds">Govt Bonds / Sukuk</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bonds" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="other_invest">Other Investment Schemes</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_otherInvest" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label><span data-i18n="bonds">Govt Bonds / Sukuk</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bonds"        value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="other_invest">Other Investment Schemes</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_otherInvest"  value="0" min="0" oninput="calc()" /></div></div>
       </div>
     </div>
   </div>
@@ -460,59 +407,32 @@
       </div>
     </div>
     <div class="section-body">
-      <div class="info-box warning" data-i18n="biz_exclude_note">❌ Exclude: Land, Buildings, Machinery, Vehicles, Office Furniture & Equipment (PPE). These are NOT Zakatable.</div>
+      <div class="info-box warning" data-i18n="biz_exclude_note">❌ Exclude: Land, Buildings, Machinery, Vehicles, Office Furniture &amp; Equipment (PPE). These are NOT Zakatable.</div>
 
       <div class="sub-heading" data-i18n="biz_liquid_heading">Business Liquid Assets</div>
       <div class="field-group triple">
-        <div class="field">
-          <label><span data-i18n="biz_cash">Business Cash (in hand)</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bizCash" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="biz_bank">Business Bank Balance</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bizBank" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="petty_cash">Petty Cash / Float</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_pettyCash" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label><span data-i18n="biz_cash">Business Cash (in hand)</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bizCash"      value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="biz_bank">Business Bank Balance</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bizBank"      value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="petty_cash">Petty Cash / Float</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_pettyCash"    value="0" min="0" oninput="calc()" /></div></div>
       </div>
 
       <div class="sub-heading" data-i18n="inventory_heading">Inventory (at Sale Price)</div>
       <div class="info-box" data-i18n="inventory_note">Value inventory at current sale/retail price, NOT cost. Zakah is on the trade value, not what you paid.</div>
       <div class="field-group triple">
-        <div class="field">
-          <label><span data-i18n="finished_goods">Finished Goods</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_finishedGoods" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="raw_materials">Raw Materials</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rawMaterials" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="wip">Work in Progress (WIP)</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_wip" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="trade_goods">Trade Goods / Merchandise</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_tradeGoods" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label><span data-i18n="finished_goods">Finished Goods</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_finishedGoods" value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="raw_materials">Raw Materials</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rawMaterials"  value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="wip">Work in Progress (WIP)</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_wip"           value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="trade_goods">Trade Goods / Merchandise</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_tradeGoods"    value="0" min="0" oninput="calc()" /></div></div>
       </div>
 
       <div class="sub-heading" data-i18n="receivables_heading">Business Receivables</div>
       <div class="field-group triple">
         <div class="field">
-          <label><span data-i18n="trade_receivables">Trade Receivables</span> <span class="tooltip-icon" data-tip="Money owed to you by clients that you're confident will be paid.">?</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_tradeRec" value="0" min="0" oninput="calc()" /></div>
+          <label><span data-i18n="trade_receivables">Trade Receivables</span> <span class="tooltip-icon" data-tip-key="tip_trade_rec" data-tip="Money owed to you by clients that you're confident will be paid.">?</span></label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_tradeRec"      value="0" min="0" oninput="calc()" /></div>
         </div>
-        <div class="field">
-          <label><span data-i18n="advance_paid">Advances Paid to Suppliers</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_advancePaid" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="security_deposits">Security Deposits Given</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_secDeposit" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label><span data-i18n="advance_paid">Advances Paid to Suppliers</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_advancePaid"   value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="security_deposits">Security Deposits Given</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_secDeposit"    value="0" min="0" oninput="calc()" /></div></div>
       </div>
     </div>
   </div>
@@ -523,7 +443,7 @@
       <div class="section-header-left">
         <div class="section-icon icon-liab">📉</div>
         <div>
-          <div class="section-title" data-i18n="sec_liab_title">Section E — Liabilities & Deductions</div>
+          <div class="section-title" data-i18n="sec_liab_title">Section E — Liabilities &amp; Deductions</div>
           <div class="section-subtitle" data-i18n="sec_liab_sub">Short-term debts and payables due within 12 months</div>
         </div>
       </div>
@@ -537,46 +457,22 @@
 
       <div class="sub-heading" data-i18n="personal_debts">Personal Debts</div>
       <div class="field-group triple">
+        <div class="field"><label><span data-i18n="personal_loans">Personal Loans Due</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_personalLoan"    value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="credit_card">Credit Card Balance</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_creditCard"       value="0" min="0" oninput="calc()" /></div></div>
         <div class="field">
-          <label><span data-i18n="personal_loans">Personal Loans Due</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_personalLoan" value="0" min="0" oninput="calc()" /></div>
+          <label><span data-i18n="mortgage_12mo">Mortgage (next 12 months)</span> <span class="tooltip-icon" data-tip-key="tip_mortgage" data-tip="Only deduct the installment amount due in the next 12 months, not the full remaining balance.">?</span></label>
+          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_mortgage12"      value="0" min="0" oninput="calc()" /></div>
         </div>
-        <div class="field">
-          <label><span data-i18n="credit_card">Credit Card Balance</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_creditCard" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="mortgage_12mo">Mortgage (next 12 months)</span> <span class="tooltip-icon" data-tip="Only deduct the installment amount due in the next 12 months, not the full remaining balance.">?</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_mortgage12" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="rent_bills">Overdue Rent / Utilities</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rentBills" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="taxes_due">Taxes Due</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_taxesDue" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label><span data-i18n="rent_bills">Overdue Rent / Utilities</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_rentBills"       value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="taxes_due">Taxes Due</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_taxesDue"        value="0" min="0" oninput="calc()" /></div></div>
       </div>
 
       <div class="sub-heading" data-i18n="business_liab">Business Liabilities</div>
       <div class="field-group triple">
-        <div class="field">
-          <label><span data-i18n="biz_loan">Business Loans (12 months)</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bizLoan" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="trade_payables">Trade Payables / Supplier Bills</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_tradePayables" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="salaries_payable">Salaries Payable</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_salariesPayable" value="0" min="0" oninput="calc()" /></div>
-        </div>
-        <div class="field">
-          <label><span data-i18n="advance_received">Customer Advances Received</span></label>
-          <div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_advanceReceived" value="0" min="0" oninput="calc()" /></div>
-        </div>
+        <div class="field"><label><span data-i18n="biz_loan">Business Loans (12 months)</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_bizLoan"         value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="trade_payables">Trade Payables / Supplier Bills</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_tradePayables"  value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="salaries_payable">Salaries Payable</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_salariesPayable" value="0" min="0" oninput="calc()" /></div></div>
+        <div class="field"><label><span data-i18n="advance_received">Customer Advances Received</span></label><div class="input-wrap"><span class="input-prefix curr-pfx">৳</span><input type="number" id="f_advanceReceived" value="0" min="0" oninput="calc()" /></div></div>
       </div>
     </div>
   </div>
@@ -624,7 +520,6 @@
       </div>
     </div>
 
-    <!-- NISAB BAR -->
     <div class="nisab-bar-wrap">
       <div class="nisab-bar-label">
         <span data-i18n="wealth_vs_nisab">Your Wealth vs. Nisab</span>
@@ -635,46 +530,70 @@
       </div>
     </div>
 
-    <!-- BREAKDOWN -->
     <div class="breakdown">
       <div class="breakdown-title" data-i18n="detailed_breakdown">Detailed Breakdown</div>
-      <div class="breakdown-row">
-        <span class="breakdown-row-label" data-i18n="cash_liquid_bd">Cash & Liquid Assets</span>
-        <span class="breakdown-row-val pos" id="bd_cash">৳ 0</span>
-      </div>
-      <div class="breakdown-row">
-        <span class="breakdown-row-label" data-i18n="precious_metals_bd">Precious Metals</span>
-        <span class="breakdown-row-val pos" id="bd_metals">৳ 0</span>
-      </div>
-      <div class="breakdown-row">
-        <span class="breakdown-row-label" data-i18n="investments_bd">Investments</span>
-        <span class="breakdown-row-val pos" id="bd_invest">৳ 0</span>
-      </div>
-      <div class="breakdown-row">
-        <span class="breakdown-row-label" data-i18n="business_bd">Business Assets</span>
-        <span class="breakdown-row-val pos" id="bd_biz">৳ 0</span>
-      </div>
-      <div class="breakdown-row divider">
-        <span class="breakdown-row-label" data-i18n="liabilities_bd">(-) Liabilities</span>
-        <span class="breakdown-row-val neg" id="bd_liab">৳ 0</span>
-      </div>
-      <div class="breakdown-row divider">
-        <span class="breakdown-row-label" data-i18n="net_zakatable">Net Zakatable Wealth</span>
-        <span class="breakdown-row-val total" id="bd_net">৳ 0</span>
-      </div>
-      <div class="breakdown-row divider">
-        <span class="breakdown-row-label" data-i18n="zakah_payable">Zakah Payable</span>
-        <span class="breakdown-row-val zakah" id="bd_zakah">৳ 0</span>
-      </div>
+      <div class="breakdown-row"><span class="breakdown-row-label" data-i18n="cash_liquid_bd">Cash &amp; Liquid Assets</span><span class="breakdown-row-val pos" id="bd_cash">৳ 0</span></div>
+      <div class="breakdown-row"><span class="breakdown-row-label" data-i18n="precious_metals_bd">Precious Metals</span><span class="breakdown-row-val pos" id="bd_metals">৳ 0</span></div>
+      <div class="breakdown-row"><span class="breakdown-row-label" data-i18n="investments_bd">Investments</span><span class="breakdown-row-val pos" id="bd_invest">৳ 0</span></div>
+      <div class="breakdown-row"><span class="breakdown-row-label" data-i18n="business_bd">Business Assets</span><span class="breakdown-row-val pos" id="bd_biz">৳ 0</span></div>
+      <div class="breakdown-row divider"><span class="breakdown-row-label" data-i18n="liabilities_bd">(-) Liabilities</span><span class="breakdown-row-val neg" id="bd_liab">৳ 0</span></div>
+      <div class="breakdown-row divider"><span class="breakdown-row-label" data-i18n="net_zakatable">Net Zakatable Wealth</span><span class="breakdown-row-val total" id="bd_net">৳ 0</span></div>
+      <div class="breakdown-row divider"><span class="breakdown-row-label" data-i18n="zakah_payable">Zakah Payable</span><span class="breakdown-row-val zakah" id="bd_zakah">৳ 0</span></div>
     </div>
   </div>
 
-  <div style="display:flex;justify-content:center;margin-bottom:40px;" class="fade-up">
+  <!-- ACTION BAR: PDF Export + Reset -->
+  <div class="action-bar fade-up">
+    <button class="btn-pdf" id="pdfExportBtn" onclick="exportZakatPDF()">
+      <span class="btn-spin"></span>
+      <span>⬇</span>
+      <span class="btn-label" data-i18n="export_pdf">Export PDF</span>
+    </button>
     <button class="btn-reset" onclick="resetAll()">↺ <span data-i18n="reset_btn">Reset All Fields</span></button>
   </div>
 
 </div>
 </main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SHARE MODAL
+     ═══════════════════════════════════════════════════════════ -->
+<div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+  <div class="share-modal">
+    <div class="share-modal-header">
+      <div class="share-modal-title-block">
+        <div class="share-modal-icon">↑</div>
+        <div>
+          <div class="share-modal-title" id="shareModalTitle" data-i18n="share_title">Share This Calculator</div>
+          <div class="share-modal-desc" data-i18n="share_desc">Help others calculate their Zakah accurately</div>
+        </div>
+      </div>
+      <button class="share-modal-close" onclick="closeShareModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="share-modal-body">
+      <!-- Copy Link -->
+      <button class="share-option share-opt--copy" id="copyLinkBtn" onclick="shareCopyLink()">
+        <div class="share-opt-icon">🔗</div>
+        <span data-i18n="share_copy_link">Copy Link</span>
+      </button>
+      <!-- Facebook -->
+      <button class="share-option share-opt--facebook" onclick="shareFacebook()">
+        <div class="share-opt-icon">f</div>
+        <span data-i18n="share_facebook">Facebook</span>
+      </button>
+      <!-- WhatsApp -->
+      <button class="share-option share-opt--whatsapp" onclick="shareWhatsApp()">
+        <div class="share-opt-icon">💬</div>
+        <span data-i18n="share_whatsapp">WhatsApp</span>
+      </button>
+      <!-- More (Web Share API) -->
+      <button class="share-option share-opt--more" onclick="shareMore()">
+        <div class="share-opt-icon">⋯</div>
+        <span data-i18n="share_more">More…</span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- PWA INSTALL BANNER -->
 <div class="pwa-banner" id="pwaBanner" aria-live="polite" role="complementary" hidden>
@@ -718,23 +637,23 @@
   </div>
 </footer>
 
+<!-- PDF export module (separate file, loaded before main script) -->
+<script src="pdf-export.js"></script>
+
 <script>
 /* ════════════════════════════════════════
    LANGUAGE LOADER
-   Dynamically injects translations/xx.js
    ════════════════════════════════════════ */
 let currentLang = localStorage.getItem('zakat_lang') || 'en';
-let L = {};   
+let L = {};
 
 function loadLang(lang, callback) {
   const old = document.getElementById('lang-script');
   if (old) old.remove();
-
   const s = document.createElement('script');
   s.id  = 'lang-script';
   s.src = `translations/${lang}.js`;
   s.onload = () => {
-    // Each translation file exposes LANG_DATA on window
     L = window.LANG_DATA || {};
     if (callback) callback();
   };
@@ -758,7 +677,13 @@ function applyLang(lang) {
     if (L[key] !== undefined) el.textContent = L[key];
   });
 
-  // Sync eligible badge text with fresh L
+  /* ── Tooltip translation: set data-tip from language data ── */
+  document.querySelectorAll('[data-tip-key]').forEach(el => {
+    const key = el.getAttribute('data-tip-key');
+    if (L[key] !== undefined) el.setAttribute('data-tip', L[key]);
+  });
+
+  // Sync eligible badge
   const nwRaw    = parseFloat(document.getElementById('r_netWealth')?.textContent?.replace(/[^\d.]/g,'') || '0');
   const nisabRaw = parseFloat(document.getElementById('r_nisabVal')?.textContent?.replace(/[^\d.]/g,'')  || '9999999');
   const badge    = document.getElementById('eligibleBadge');
@@ -777,20 +702,19 @@ function setLang(lang) {
    CONSTANTS
    ════════════════════════════════════════ */
 const TROY_OZ_TO_GRAM = 31.1035;
-const BHORI_TO_GRAM   = 11.6638;   
+const BHORI_TO_GRAM   = 11.6638;
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
 const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', GBP:'£', AUD:'A$', INR:'₹' };
-const METALS_URL  = './data/metals.json';
-const RATES_URL   = './data/rates.json';
+const METALS_URL = './data/metals.json';
+const RATES_URL  = './data/rates.json';
 
 /* ════════════════════════════════════════
    STATE
    ════════════════════════════════════════ */
-let currentCurrency = localStorage.getItem('zakat_currency') || 'BDT';
-let nisabType       = 'silver';
-let calendarType    = 'lunar';
-let stockMethod     = 'trade';
-
+let currentCurrency    = localStorage.getItem('zakat_currency') || 'BDT';
+let nisabType          = 'silver';
+let calendarType       = 'lunar';
+let stockMethod        = 'trade';
 let liveGoldUsdPerOz   = 0;
 let liveSilverUsdPerOz = 0;
 let fxRates            = {};
@@ -957,7 +881,6 @@ function updatePriceDisplay() {
   document.getElementById('silverPriceDisplay').textContent = `${sym} ${silverPerGram.toFixed(2)}`;
   document.getElementById('fxRateDisplay').textContent      = `${rate.toFixed(4)}`;
 
-  // Per-bhori shown as informational sub-label for BDT; otherwise plain per-gram label
   const isBDT = currentCurrency === 'BDT';
   const goldBhoriPrice   = goldPerGram   * BHORI_TO_GRAM;
   const silverBhoriPrice = silverPerGram * BHORI_TO_GRAM;
@@ -1045,7 +968,6 @@ function v(id) {
 function calc() {
   const { goldPerGram, silverPerGram } = getConvertedPrices();
 
-  // Section A: Cash
   const cashTotal =
     v('f_cashOnHand') + v('f_cashForeign') +
     v('f_bankSavings') + v('f_bankCurrent') + v('f_bankFD') +
@@ -1054,7 +976,6 @@ function calc() {
     v('f_rocket') + v('f_paypal') + v('f_othersWallet') +
     v('f_moneyLent') + v('f_salaryDue');
 
-  // Section B: Metals (always in grams)
   const gold24kEquiv =
     v('f_gold24k')   * (24/24) +
     v('f_gold22k')   * (22/24) +
@@ -1071,7 +992,6 @@ function calc() {
   document.getElementById('silverValTotal').textContent    = fmt(silverValue);
   document.getElementById('metalValTotalDisp').textContent = fmt(metalTotal);
 
-  // Section C: Investments
   const rawStocks = v('f_dseStocks') + v('f_intlStocks');
   const rawMutual = v('f_mutualFunds');
   const stocksVal = stockMethod === 'trade' ? rawStocks : rawStocks * 0.25;
@@ -1080,13 +1000,11 @@ function calc() {
   const pensionTotal = v('f_gpf') + v('f_nsc') + v('f_bonds') + v('f_otherInvest');
   const investTotal  = stocksVal + mutualVal + cryptoTotal + pensionTotal;
 
-  // Section D: Business
   const bizLiquid      = v('f_bizCash') + v('f_bizBank') + v('f_pettyCash');
   const bizInventory   = v('f_finishedGoods') + v('f_rawMaterials') + v('f_wip') + v('f_tradeGoods');
   const bizReceivables = v('f_tradeRec') + v('f_advancePaid') + v('f_secDeposit');
   const bizTotal       = bizLiquid + bizInventory + bizReceivables;
 
-  // Section E: Liabilities
   const personalLiab =
     v('f_personalLoan') + v('f_creditCard') + v('f_mortgage12') +
     v('f_rentBills')    + v('f_taxesDue');
@@ -1094,11 +1012,9 @@ function calc() {
     v('f_bizLoan') + v('f_tradePayables') + v('f_salariesPayable') + v('f_advanceReceived');
   const liabTotal = personalLiab + bizLiab;
 
-  // Totals
   const totalAssets = cashTotal + metalTotal + investTotal + bizTotal;
   const netWealth   = Math.max(0, totalAssets - liabTotal);
 
-  // Nisab
   const SILVER_NISAB_G = 612.36;
   const GOLD_NISAB_G   = 87.48;
   const nisabValue = nisabType === 'silver'
@@ -1109,17 +1025,14 @@ function calc() {
   document.getElementById('nisabMetalDisp').textContent = metalLabel;
   document.getElementById('nisabValueDisp').textContent = fmt(nisabValue);
 
-  // Zakah rate
   const zakahRate     = calendarType === 'lunar' ? 0.025 : 0.02577;
   const rateLabel     = calendarType === 'lunar' ? '2.5%' : '2.577%';
   const calendarLabel = calendarType === 'lunar' ? 'Lunar (Hijri)' : 'Solar (Gregorian)';
   document.getElementById('zakahRateDisp').textContent = rateLabel;
 
-  // Eligibility
   const isEligible = nisabValue > 0 && netWealth >= nisabValue;
   const zakahDue   = isEligible ? netWealth * zakahRate : 0;
 
-  // Progress bar
   const fieldIds = [
     'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
     'f_bkash','f_nagad','f_upay','f_cellfin','f_rocket','f_paypal','f_othersWallet',
@@ -1135,16 +1048,15 @@ function calc() {
     'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
   ];
   const filledCount = fieldIds.filter(id => v(id) > 0).length;
-  document.getElementById('progressFill').style.width = Math.min(100, Math.round(filledCount / fieldIds.length * 100)) + '%';
+  document.getElementById('progressFill').style.width =
+    Math.min(100, Math.round(filledCount / fieldIds.length * 100)) + '%';
 
-  // Section totals
   document.getElementById('tot-cash').textContent   = fmt(cashTotal);
   document.getElementById('tot-metals').textContent = fmt(metalTotal);
   document.getElementById('tot-invest').textContent = fmt(investTotal);
   document.getElementById('tot-biz').textContent    = fmt(bizTotal);
   document.getElementById('tot-liab').textContent   = fmt(liabTotal);
 
-  // Results panel
   document.getElementById('r_totalAssets').textContent = fmt(totalAssets);
   document.getElementById('r_totalLiab').textContent   = fmt(liabTotal);
   document.getElementById('r_netWealth').textContent   = fmt(netWealth);
@@ -1163,7 +1075,6 @@ function calc() {
   badge.className   = 'results-eligible ' + (isEligible ? 'yes' : 'no');
   document.getElementById('r_netWealth').className = 'result-stat-value ' + (isEligible ? 'green' : '');
 
-  // Breakdown
   document.getElementById('bd_cash').textContent   = fmt(cashTotal);
   document.getElementById('bd_metals').textContent = fmt(metalTotal);
   document.getElementById('bd_invest').textContent = fmt(investTotal);
@@ -1179,6 +1090,90 @@ function calc() {
 function resetAll() {
   document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = 0);
   calc();
+}
+
+/* ════════════════════════════════════════
+   SHARE MODAL
+   ════════════════════════════════════════ */
+function openShareModal() {
+  const overlay = document.getElementById('shareOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Focus close button for accessibility
+  setTimeout(() => overlay.querySelector('.share-modal-close')?.focus(), 50);
+}
+
+function closeShareModal() {
+  document.getElementById('shareOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('shareOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeShareModal();
+  });
+  // Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeShareModal();
+  });
+});
+
+function shareCopyLink() {
+  const url = window.location.href;
+  const btn = document.getElementById('copyLinkBtn');
+  const label = btn.querySelector('[data-i18n]');
+  navigator.clipboard.writeText(url).then(() => {
+    btn.classList.add('copied');
+    if (label) label.textContent = L.share_copied || 'Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      if (label) label.textContent = L.share_copy_link || 'Copy Link';
+    }, 2500);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.classList.add('copied');
+    if (label) label.textContent = L.share_copied || 'Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      if (label) label.textContent = L.share_copy_link || 'Copy Link';
+    }, 2500);
+  });
+}
+
+function shareFacebook() {
+  const url = encodeURIComponent(window.location.href);
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
+}
+
+function shareWhatsApp() {
+  const url  = window.location.href;
+  const msg  = encodeURIComponent(`${L.share_whatsapp_msg || 'Calculate your Zakah accurately with this free, scholarly-precise calculator:'} ${url}`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+function shareMore() {
+  const shareData = {
+    title: L.title || 'Zakah Calculator',
+    text:  L.share_whatsapp_msg || 'Calculate your Zakah accurately with this free, scholarly-precise calculator:',
+    url:   window.location.href,
+  };
+  if (navigator.share) {
+    navigator.share(shareData).catch(err => {
+      // User dismissed or error — silent fail
+      if (err.name !== 'AbortError') console.warn('[Share]', err);
+    });
+  } else {
+    // Web Share API not available — fallback to copy
+    shareCopyLink();
+  }
 }
 
 /* ════════════════════════════════════════
@@ -1235,11 +1230,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('footerYear').textContent = new Date().getFullYear();
 
-  // Set lang toggle button state
   document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
   document.getElementById('btn-bn').classList.toggle('active', currentLang === 'bn');
 
-  // Load translation first, then initialise everything
   loadLang(currentLang, () => {
     applyLang(currentLang);
     calc();
@@ -1247,17 +1240,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
-
-<style>
-.price-disclaimer {
-  font-size: 11px;
-  color: var(--text-muted, #888);
-  line-height: 1.5;
-  margin: 12px 4px 0;
-  padding: 8px 10px;
-  border-top: 1px solid var(--border, #e5e5e5);
-  opacity: 0.85;
-}
-</style>
 </body>
 </html>
