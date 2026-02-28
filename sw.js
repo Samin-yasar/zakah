@@ -3,20 +3,18 @@
    Samin's Initiatives
    ════════════════════════════════════════ */
 
-const CACHE_NAME   = 'zakah-calc-v5';
-const DATA_CACHE   = 'zakah-data-v5';
+const CACHE_NAME   = 'zakah-calc-v6';
+const DATA_CACHE   = 'zakah-data-v6';
 
 // Core shell
 const SHELL_ASSETS = [
   './index.html',
   './styles.css',
-  './translations/en.js',   // ← fixed: missing comma was here (caused syntax error)
+  './translations/en.js',   
   './translations/bn.js',
   './manifest.json',
   'https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap',
 ];
-
-// Data files updated by GitHub Actions — cached separately with shorter TTL logic
 const DATA_ASSETS = [
   './data/rates.json',
   './data/metals.json',
@@ -44,7 +42,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-/* ── FETCH: stale-while-revalidate for data, cache-first for shell ── */
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
@@ -93,7 +90,7 @@ async function cacheFirstWithNetwork(request, cacheName) {
     }
     return response;
   } catch {
-    return await caches.match('./index.html') ||   // ← fixed: was './zakah-calculator.html' (file does not exist)
+    return await caches.match('./index.html') ||   
       new Response('App is offline', { status: 503 });
   }
 }
