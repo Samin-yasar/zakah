@@ -5,7 +5,8 @@ async function fetchReportDate() {
   let userTZ = 'UTC';
   try {
     userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch (_) { 
+  } catch (_) { /* use UTC fallback */ }
+
   function formatDate(dt) {
     const tzAbbr = (() => {
       try {
@@ -21,13 +22,14 @@ async function fetchReportDate() {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     }) + ` (${tzAbbr})`;
 
-    const parts = new Intl.DateTimeFormat('en-CA', {   
+    const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone: userTZ,
       year: 'numeric', month: '2-digit', day: '2-digit'
     }).format(dt);
 
     return { display, iso: parts };
   }
+
   try {
     const tzEncoded = encodeURIComponent(userTZ);
     const res = await fetch(
@@ -107,10 +109,10 @@ async function exportZakatPDF() {
     /* 2. Re-compute all values (mirrors calc() logic) */
     const prices = getConvertedPrices();   // global fn from main script
     const { goldPerGram, silverPerGram } = prices;
-    const cur  = typeof currentCurrency !== 'undefined' ? currentCurrency : 'BDT';
-    const nType = typeof nisabType    !== 'undefined' ? nisabType    : 'silver';
-    const cType = typeof calendarType !== 'undefined' ? calendarType : 'lunar';
-    const sMethod = typeof stockMethod !== 'undefined' ? stockMethod : 'trade';
+    const cur     = typeof currentCurrency !== 'undefined' ? currentCurrency : 'BDT';
+    const nType   = typeof nisabType       !== 'undefined' ? nisabType       : 'silver';
+    const cType   = typeof calendarType    !== 'undefined' ? calendarType    : 'lunar';
+    const sMethod = typeof stockMethod     !== 'undefined' ? stockMethod     : 'trade';
 
     /* Section A */
     const A = {
@@ -142,13 +144,13 @@ async function exportZakatPDF() {
     const silverGrams = _v('f_silverGrams') + _v('f_silverBullion');
     const silverValue = silverGrams * silverPerGram;
     const B_entries = {
-      [`Gold 24k: ${_v('f_gold24k').toFixed(3)}g`]:   _v('f_gold24k')   * goldPerGram,
-      [`Gold 22k: ${_v('f_gold22k').toFixed(3)}g`]:   _v('f_gold22k')   * (22/24) * goldPerGram,
-      [`Gold 18k: ${_v('f_gold18k').toFixed(3)}g`]:   _v('f_gold18k')   * (18/24) * goldPerGram,
-      [`Gold 21k: ${_v('f_gold21k').toFixed(3)}g`]:   _v('f_gold21k')   * (21/24) * goldPerGram,
-      [`Gold Coins/Bars 24k: ${_v('f_goldCoins').toFixed(3)}g`]: _v('f_goldCoins') * goldPerGram,
-      [`Silver: ${_v('f_silverGrams').toFixed(3)}g`]:   _v('f_silverGrams') * silverPerGram,
-      [`Silver Bullion: ${_v('f_silverBullion').toFixed(3)}g`]: _v('f_silverBullion') * silverPerGram,
+      [`Gold 24k: ${_v('f_gold24k').toFixed(3)}g`]:                    _v('f_gold24k')   * goldPerGram,
+      [`Gold 22k: ${_v('f_gold22k').toFixed(3)}g`]:                    _v('f_gold22k')   * (22/24) * goldPerGram,
+      [`Gold 18k: ${_v('f_gold18k').toFixed(3)}g`]:                    _v('f_gold18k')   * (18/24) * goldPerGram,
+      [`Gold 21k: ${_v('f_gold21k').toFixed(3)}g`]:                    _v('f_gold21k')   * (21/24) * goldPerGram,
+      [`Gold Coins/Bars 24k: ${_v('f_goldCoins').toFixed(3)}g`]:       _v('f_goldCoins') * goldPerGram,
+      [`Silver: ${_v('f_silverGrams').toFixed(3)}g`]:                   _v('f_silverGrams')   * silverPerGram,
+      [`Silver Bullion: ${_v('f_silverBullion').toFixed(3)}g`]:         _v('f_silverBullion') * silverPerGram,
     };
     const totalB = goldValue + silverValue;
 
@@ -158,8 +160,10 @@ async function exportZakatPDF() {
     const stocksVal = sMethod === 'trade' ? rawStocks : rawStocks * 0.25;
     const mutualVal = sMethod === 'trade' ? rawMutual : rawMutual * 0.25;
     const C = {
-      [`DSE Stocks${sMethod === 'longterm' ? ' (25% proxy)' : ''}`]: stocksVal,
-      [`International Stocks${sMethod === 'longterm' ? ' (25% proxy)' : ''}`]: sMethod === 'trade' ? _v('f_intlStocks') : _v('f_intlStocks') * 0.25,
+      [`DSE Stocks${sMethod === 'longterm' ? ' (25% proxy)' : ''}`]:
+        sMethod === 'trade' ? _v('f_dseStocks') : _v('f_dseStocks') * 0.25,
+      [`International Stocks${sMethod === 'longterm' ? ' (25% proxy)' : ''}`]:
+        sMethod === 'trade' ? _v('f_intlStocks') : _v('f_intlStocks') * 0.25,
       [`Mutual Funds / ETFs${sMethod === 'longterm' ? ' (25% proxy)' : ''}`]: mutualVal,
       'Bitcoin (BTC)':            _v('f_btc'),
       'Ethereum (ETH)':           _v('f_eth'),
@@ -169,9 +173,6 @@ async function exportZakatPDF() {
       'Govt Bonds / Sukuk':       _v('f_bonds'),
       'Other Investment Schemes': _v('f_otherInvest'),
     };
-    // Recalculate stocksVal correctly
-    C[`DSE Stocks${sMethod === 'longterm' ? ' (25% proxy)' : ''}`] =
-      sMethod === 'trade' ? _v('f_dseStocks') : _v('f_dseStocks') * 0.25;
     const totalC = Object.values(C).reduce((s, v) => s + v, 0);
 
     /* Section D */
@@ -191,15 +192,15 @@ async function exportZakatPDF() {
 
     /* Section E */
     const E = {
-      'Personal Loans Due':            _v('f_personalLoan'),
-      'Credit Card Balance':           _v('f_creditCard'),
-      'Mortgage (next 12 months)':     _v('f_mortgage12'),
-      'Overdue Rent / Utilities':      _v('f_rentBills'),
-      'Taxes Due':                     _v('f_taxesDue'),
-      'Business Loans (12 months)':    _v('f_bizLoan'),
+      'Personal Loans Due':              _v('f_personalLoan'),
+      'Credit Card Balance':             _v('f_creditCard'),
+      'Mortgage (next 12 months)':       _v('f_mortgage12'),
+      'Overdue Rent / Utilities':        _v('f_rentBills'),
+      'Taxes Due':                       _v('f_taxesDue'),
+      'Business Loans (12 months)':      _v('f_bizLoan'),
       'Trade Payables / Supplier Bills': _v('f_tradePayables'),
-      'Salaries Payable':              _v('f_salariesPayable'),
-      'Customer Advances Received':    _v('f_advanceReceived'),
+      'Salaries Payable':                _v('f_salariesPayable'),
+      'Customer Advances Received':      _v('f_advanceReceived'),
     };
     const totalE = Object.values(E).reduce((s, v) => s + v, 0);
 
@@ -223,26 +224,23 @@ async function exportZakatPDF() {
     const CW = 210 - ML - MR;  // 180mm
 
     /* COLOUR PALETTE */
-    const GOLD_C    = [201, 168, 76];
-    const DARK_C    = [17,  24,  39];
-    const WHITE_C   = [255, 255, 255];
-    const MUTED_C   = [120, 130, 150];
-    const LGOLD_BG  = [252, 248, 234];   // light gold tint
-    const LSEC_BG   = [244, 247, 252];   // light section row bg
-    const GREEN_C   = [34,  160, 85];
-    const RED_C     = [210, 70,  70];
-    const TEAL_C    = [30,  180, 160];
+    const GOLD_C   = [201, 168, 76];
+    const DARK_C   = [17,  24,  39];
+    const WHITE_C  = [255, 255, 255];
+    const MUTED_C  = [120, 130, 150];
+    const LGOLD_BG = [252, 248, 234];
+    const LSEC_BG  = [244, 247, 252];
+    const GREEN_C  = [34,  160, 85];
+    const RED_C    = [210, 70,  70];
+    const TEAL_C   = [30,  180, 160];
 
     /* ── COVER HEADER ──────────────────────────────────────── */
-    // Dark banner
     doc.setFillColor(...DARK_C);
     doc.rect(0, 0, 210, 48, 'F');
 
-    // Top gold stripe
     doc.setFillColor(...GOLD_C);
     doc.rect(0, 0, 210, 3.5, 'F');
 
-    // Logo circle
     doc.setFillColor(...GOLD_C);
     doc.circle(ML + 11, 24, 9.5, 'F');
     doc.setTextColor(...DARK_C);
@@ -250,24 +248,20 @@ async function exportZakatPDF() {
     doc.setFontSize(10);
     doc.text('ZC', ML + 11, 27.5, { align: 'center' });
 
-    // Main title
     doc.setTextColor(...WHITE_C);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.text('ZAKAH CALCULATOR', ML + 27, 20);
 
-    // Brand subtitle
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(...GOLD_C);
     doc.text("Samin's Initiatives", ML + 27, 29);
 
-    // Report tag
     doc.setFontSize(8.5);
     doc.setTextColor(190, 200, 220);
     doc.text('Zakah Assessment Report  |  1430H Method', ML + 27, 37);
 
-    // Date block (right)
     doc.setTextColor(...GOLD_C);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
@@ -278,7 +272,6 @@ async function exportZakatPDF() {
     doc.text('Date of Report', 210 - MR, 28, { align: 'right' });
     doc.text(`ISO: ${dateInfo.iso}`, 210 - MR, 34, { align: 'right' });
 
-    // Bottom gold stripe
     doc.setFillColor(...GOLD_C);
     doc.rect(0, 44.5, 210, 2, 'F');
 
@@ -297,10 +290,10 @@ async function exportZakatPDF() {
     doc.text('CALCULATION SETTINGS', ML + 4, y + 6.5);
 
     const settingItems = [
-      ['Nisab Basis',   nType === 'silver' ? 'Silver — 612.36g' : 'Gold — 87.48g'],
-      ['Calendar',      cType === 'lunar'  ? 'Lunar / Hijri (2.5%)' : 'Solar / Gregorian (2.577%)'],
-      ['Stock Method',  sMethod === 'trade' ? 'Short-term Trading' : 'Long-term Investment (25% proxy)'],
-      ['Currency',      cur],
+      ['Nisab Basis',  nType   === 'silver' ? 'Silver — 612.36g'          : 'Gold — 87.48g'],
+      ['Calendar',     cType   === 'lunar'  ? 'Lunar / Hijri (2.5%)'      : 'Solar / Gregorian (2.577%)'],
+      ['Stock Method', sMethod === 'trade'  ? 'Short-term Trading'         : 'Long-term (25% proxy)'],
+      ['Currency',     cur],
     ];
 
     const colW = CW / 4;
@@ -341,9 +334,9 @@ async function exportZakatPDF() {
       }
       doc.setFont('helvetica', bold ? 'bold' : 'normal');
       doc.setFontSize(8.5);
-      doc.setTextColor(bold ? 30 : 55, bold ? 40 : 55, bold ? 55 : 70);
+      doc.setTextColor(...(bold ? GREEN_C : [55, 55, 70]));
       doc.text(label, ML + 5, y + 4.8);
-      doc.setTextColor(bold ? ...GREEN_C : [80, 65, 20]);
+      doc.setTextColor(...(bold ? GREEN_C : [80, 65, 20]));
       doc.text(value, 210 - MR - 3, y + 4.8, { align: 'right' });
       return y + 6.8;
     }
@@ -360,7 +353,6 @@ async function exportZakatPDF() {
     function totalRow(label, value, y, colorArr) {
       y = _guard(doc, y, 8, null);
       const [tr, tg, tb] = colorArr || GREEN_C;
-      doc.setFillColor(tr, tg, tb, 0.1);
       doc.setFillColor(240, 248, 242);
       doc.rect(ML, y, CW, 8, 'F');
       doc.setDrawColor(tr, tg, tb);
@@ -389,11 +381,10 @@ async function exportZakatPDF() {
     }
 
     /* ── RENDER SECTIONS ──────────────────────────────────── */
-
-    y = renderSection('SECTION A — CASH & LIQUID ASSETS', A, totalA, y, TEAL_C);
-    y = renderSection('SECTION B — PRECIOUS METALS & JEWELRY', B_entries, totalB, y, GOLD_C);
-    y = renderSection('SECTION C — INVESTMENTS & FINANCIAL ASSETS', C, totalC, y, TEAL_C);
-    y = renderSection('SECTION D — BUSINESS ASSETS', D, totalD, y, [100, 80, 200]);
+    y = renderSection('SECTION A — CASH & LIQUID ASSETS',           A,        totalA, y, TEAL_C);
+    y = renderSection('SECTION B — PRECIOUS METALS & JEWELRY',      B_entries, totalB, y, GOLD_C);
+    y = renderSection('SECTION C — INVESTMENTS & FINANCIAL ASSETS', C,        totalC, y, TEAL_C);
+    y = renderSection('SECTION D — BUSINESS ASSETS',                D,        totalD, y, [100, 80, 200]);
 
     /* Section E (Liabilities — negative) */
     y = sectionHeader('SECTION E — LIABILITIES & DEDUCTIONS', y);
@@ -432,11 +423,10 @@ async function exportZakatPDF() {
     /* ── RESULTS SUMMARY ───────────────────────────────────── */
     y = _guard(doc, y, 70, null);
 
-    // Summary header
     doc.setFillColor(...DARK_C);
     doc.rect(ML, y, CW, 11, 'F');
     doc.setFillColor(...GOLD_C);
-    doc.rect(ML, y, 210 - ML - MR, 2, 'F');
+    doc.rect(ML, y, CW, 2, 'F');
     doc.setFillColor(...GOLD_C);
     doc.rect(ML, y, 3.5, 11, 'F');
     doc.setTextColor(...WHITE_C);
@@ -448,12 +438,11 @@ async function exportZakatPDF() {
     doc.text(isEligible ? 'ZAKAH OBLIGATORY' : 'NOT YET ELIGIBLE', 210 - MR - 3, y + 7.5, { align: 'right' });
     y += 11;
 
-    // Summary grid
     const summaryRows = [
-      ['Total Assets',          _fmt(totalAssets, cur),  TEAL_C, false],
-      ['(-) Total Liabilities', _fmt(totalE, cur),       RED_C,  false],
-      ['Net Zakatable Wealth',  _fmt(netWealth, cur),    GREEN_C, true],
-      ['Nisab Threshold',       _fmt(nisabValue, cur),   MUTED_C, false],
+      ['Total Assets',          _fmt(totalAssets, cur),                                          TEAL_C,  false],
+      ['(-) Total Liabilities', _fmt(totalE,       cur),                                          RED_C,   false],
+      ['Net Zakatable Wealth',  _fmt(netWealth,    cur),                                          GREEN_C, true],
+      ['Nisab Threshold',       _fmt(nisabValue,   cur),                                          MUTED_C, false],
       ['Rate Applied',          cType === 'lunar' ? '2.5% (Lunar/Hijri)' : '2.577% (Solar/Gregorian)', MUTED_C, false],
     ];
 
@@ -471,7 +460,7 @@ async function exportZakatPDF() {
       y += 8;
     });
 
-    // ZAKAH DUE — big highlight row
+    /* ZAKAH DUE — big highlight row */
     y = _guard(doc, y, 16, null);
     const zakahBg = isEligible ? [228, 248, 236] : [248, 242, 228];
     doc.setFillColor(...zakahBg);
@@ -509,7 +498,6 @@ async function exportZakatPDF() {
       "scholar for authoritative Zakah rulings. Samin's Initiatives does not warrant the accuracy of this report.";
     const lines = doc.splitTextToSize(disclaimer, CW - 4);
     doc.text(lines, ML + 2, y);
-    y += lines.length * 4 + 4;
 
     /* ── FOOTER (every page) ────────────────────────────────── */
     const totalPages = doc.getNumberOfPages();
