@@ -155,4 +155,30 @@ window.LANG_DATA = {
   pwa_desc: "Add to your home screen for offline access",
   pwa_install: "Install App",
   pwa_ios_hint: 'Tap Share ⬆ then "Add to Home Screen"',
+
+  /* ── Tooltip keys ─────────────────────────────────────── */
+  tip_cash_on_hand:   "Physical cash you keep at home or in your wallet.",
+  tip_cash_foreign:   "Foreign currency you hold, converted to your selected currency.",
+  tip_fdr:            "Principal amount only. Exclude interest (Riba) — donate it separately.",
+  tip_mutual_funds:   "For Islamic funds, 100% is Zakatable. For conventional funds, use 25% proxy on NAV.",
+  tip_nsc:            "Bangladesh National Savings Certificate. Principal amount is Zakatable.",
+  tip_money_lent:     "Money you've lent that is likely to be returned. Doubtful debts may be excluded.",
+  tip_salary_due:     "Unpaid salary or bonus owed to you that will be received.",
+  tip_trade_rec:      "Money owed to you by clients that you're confident will be paid.",
+  tip_mortgage:       "Only deduct the installment amount due in the next 12 months, not the full remaining balance.",
+
+  /* ── Share modal ──────────────────────────────────────── */
+  share_title:        "Share This Calculator",
+  share_desc:         "Help others calculate their Zakah accurately",
+  share_copy_link:    "Copy Link",
+  share_copied:       "Copied!",
+  share_facebook:     "Facebook",
+  share_whatsapp:     "WhatsApp",
+  share_more:         "More…",
+  share_close:        "Close",
+  share_whatsapp_msg: "Calculate your Zakah accurately with this free, scholarly-precise calculator:",
+
+  /* ── PDF export ───────────────────────────────────────── */
+  export_pdf:         "Export PDF",
+  export_pdf_gen:     "Generating…",
 };
