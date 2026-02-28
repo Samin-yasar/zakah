@@ -38,6 +38,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap" />
 <link rel="stylesheet" href="styles.css" />
 
+<!-- Anchor offset so fixed header doesn't obscure targets -->
+<style>
+  .section-anchor {
+    display: block;
+    position: relative;
+    top: -80px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+</style>
+
 <!-- jsPDF — loaded early so it's ready when user clicks Export PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
@@ -77,6 +88,7 @@
 <div class="wrap">
 
   <!-- HERO -->
+  <a class="section-anchor" id="hero"></a>
   <div class="hero fade-up">
     <div class="hero-badge">✦ <span data-i18n="badge">2026 Professional Zakah Calculator</span></div>
     <h2 data-i18n="hero_title">Calculate Your Zakah with Precision</h2>
@@ -87,6 +99,7 @@
   </div>
 
   <!-- QURAN -->
+  <a class="section-anchor" id="quran"></a>
   <div class="quran-banner fade-up">
     <div class="quran-arabic">وَأَقِيمُوا الصَّلَاةَ وَآتُوا الزَّكَاةَ</div>
     <div class="quran-trans" data-i18n="quran_trans">"Establish prayer and give Zakah." — Quran 2:43</div>
@@ -98,6 +111,7 @@
   </div>
 
   <!-- SETTINGS -->
+  <a class="section-anchor" id="settings"></a>
   <div class="settings-card fade-up">
     <div class="settings-card-title">⚙ <span data-i18n="calc_settings">Calculation Settings</span></div>
     <div class="settings-row">
@@ -133,6 +147,7 @@
 
     <!-- LIVE PRICE PANEL -->
     <div style="margin-top:16px;">
+      <a class="section-anchor" id="prices"></a>
       <div class="price-panel">
         <div class="price-panel-header">
           <div class="price-panel-title">
@@ -205,6 +220,8 @@
   </div>
 
   <!-- SECTION A: CASH & LIQUID -->
+  <a class="section-anchor" id="section-a"></a>
+  <a class="section-anchor" id="cash"></a>
   <div class="section-card open fade-up" id="sec-cash">
     <div class="section-header" onclick="toggleSection('sec-cash')">
       <div class="section-header-left">
@@ -278,6 +295,9 @@
   </div>
 
   <!-- SECTION B: PRECIOUS METALS -->
+  <a class="section-anchor" id="section-b"></a>
+  <a class="section-anchor" id="metals"></a>
+  <a class="section-anchor" id="gold"></a>
   <div class="section-card fade-up" id="sec-metals">
     <div class="section-header" onclick="toggleSection('sec-metals')">
       <div class="section-header-left">
@@ -329,6 +349,10 @@
   </div>
 
   <!-- SECTION C: INVESTMENTS -->
+  <a class="section-anchor" id="section-c"></a>
+  <a class="section-anchor" id="investments"></a>
+  <a class="section-anchor" id="stocks"></a>
+  <a class="section-anchor" id="crypto"></a>
   <div class="section-card fade-up" id="sec-invest">
     <div class="section-header" onclick="toggleSection('sec-invest')">
       <div class="section-header-left">
@@ -392,6 +416,8 @@
   </div>
 
   <!-- SECTION D: BUSINESS ASSETS -->
+  <a class="section-anchor" id="section-d"></a>
+  <a class="section-anchor" id="business"></a>
   <div class="section-card fade-up" id="sec-biz">
     <div class="section-header" onclick="toggleSection('sec-biz')">
       <div class="section-header-left">
@@ -438,6 +464,8 @@
   </div>
 
   <!-- SECTION E: LIABILITIES -->
+  <a class="section-anchor" id="section-e"></a>
+  <a class="section-anchor" id="liabilities"></a>
   <div class="section-card fade-up" id="sec-liab">
     <div class="section-header" onclick="toggleSection('sec-liab')">
       <div class="section-header-left">
@@ -478,6 +506,8 @@
   </div>
 
   <!-- RESULTS PANEL -->
+  <a class="section-anchor" id="results"></a>
+  <a class="section-anchor" id="summary"></a>
   <div class="results-panel fade-up" id="resultsPanel">
     <div class="results-header">
       <div>
@@ -571,22 +601,18 @@
       <button class="share-modal-close" onclick="closeShareModal()" aria-label="Close">✕</button>
     </div>
     <div class="share-modal-body">
-      <!-- Copy Link -->
       <button class="share-option share-opt--copy" id="copyLinkBtn" onclick="shareCopyLink()">
         <div class="share-opt-icon">🔗</div>
         <span data-i18n="share_copy_link">Copy Link</span>
       </button>
-      <!-- Facebook -->
       <button class="share-option share-opt--facebook" onclick="shareFacebook()">
         <div class="share-opt-icon">f</div>
         <span data-i18n="share_facebook">Facebook</span>
       </button>
-      <!-- WhatsApp -->
       <button class="share-option share-opt--whatsapp" onclick="shareWhatsApp()">
         <div class="share-opt-icon">💬</div>
         <span data-i18n="share_whatsapp">WhatsApp</span>
       </button>
-      <!-- More (Web Share API) -->
       <button class="share-option share-opt--more" onclick="shareMore()">
         <div class="share-opt-icon">⋯</div>
         <span data-i18n="share_more">More…</span>
@@ -637,7 +663,6 @@
   </div>
 </footer>
 
-<!-- PDF export module (separate file, loaded before main script) -->
 <script src="pdf-export.js"></script>
 
 <script>
@@ -677,13 +702,12 @@ function applyLang(lang) {
     if (L[key] !== undefined) el.textContent = L[key];
   });
 
-  /* ── Tooltip translation: set data-tip from language data ── */
+  /* ── Tooltip translation ── */
   document.querySelectorAll('[data-tip-key]').forEach(el => {
     const key = el.getAttribute('data-tip-key');
     if (L[key] !== undefined) el.setAttribute('data-tip', L[key]);
   });
 
-  // Sync eligible badge
   const nwRaw    = parseFloat(document.getElementById('r_netWealth')?.textContent?.replace(/[^\d.]/g,'') || '0');
   const nisabRaw = parseFloat(document.getElementById('r_nisabVal')?.textContent?.replace(/[^\d.]/g,'')  || '9999999');
   const badge    = document.getElementById('eligibleBadge');
@@ -1099,7 +1123,6 @@ function openShareModal() {
   const overlay = document.getElementById('shareOverlay');
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  // Focus close button for accessibility
   setTimeout(() => overlay.querySelector('.share-modal-close')?.focus(), 50);
 }
 
@@ -1108,12 +1131,10 @@ function closeShareModal() {
   document.body.style.overflow = '';
 }
 
-// Close on backdrop click
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('shareOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeShareModal();
   });
-  // Escape key
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeShareModal();
   });
@@ -1131,7 +1152,6 @@ function shareCopyLink() {
       if (label) label.textContent = L.share_copy_link || 'Copy Link';
     }, 2500);
   }).catch(() => {
-    // Fallback for older browsers
     const ta = document.createElement('textarea');
     ta.value = url;
     ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
@@ -1167,14 +1187,64 @@ function shareMore() {
   };
   if (navigator.share) {
     navigator.share(shareData).catch(err => {
-      // User dismissed or error — silent fail
       if (err.name !== 'AbortError') console.warn('[Share]', err);
     });
   } else {
-    // Web Share API not available — fallback to copy
     shareCopyLink();
   }
 }
+
+/* ════════════════════════════════════════
+   HASH / DEEP-LINK NAVIGATION
+   ════════════════════════════════════════ */
+const HASH_SECTION_MAP = {
+  'section-a':   'sec-cash',
+  'cash':        'sec-cash',
+  'section-b':   'sec-metals',
+  'metals':      'sec-metals',
+  'gold':        'sec-metals',
+  'section-c':   'sec-invest',
+  'investments': 'sec-invest',
+  'stocks':      'sec-invest',
+  'crypto':      'sec-invest',
+  'section-d':   'sec-biz',
+  'business':    'sec-biz',
+  'section-e':   'sec-liab',
+  'liabilities': 'sec-liab',
+  'results':     null,   
+  'summary':     null,
+  'settings':    null,
+  'prices':      null,
+  'hero':        null,
+  'quran':       null,
+};
+
+function navigateToHash(hash) {
+  if (!hash || hash === '#') return;
+  const key = hash.replace('#', '').toLowerCase();
+  if (!(key in HASH_SECTION_MAP)) return;
+
+  const sectionCardId = HASH_SECTION_MAP[key];
+
+  /* Open the accordion if needed */
+  if (sectionCardId) {
+    const card = document.getElementById(sectionCardId);
+    if (card && !card.classList.contains('open')) {
+      card.classList.add('open');
+    }
+  }
+
+  /* Scroll to the anchor (slight delay lets the accordion expand first) */
+  setTimeout(() => {
+    const anchor = document.getElementById(key);
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 80);
+}
+
+/* Handle hash on load and on back/forward */
+window.addEventListener('hashchange', () => navigateToHash(window.location.hash));
 
 /* ════════════════════════════════════════
    PWA — Service Worker & Install Prompt
@@ -1237,6 +1307,8 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLang(currentLang);
     calc();
     fetchPrices();
+    /* Navigate to hash after page is fully ready */
+    if (window.location.hash) navigateToHash(window.location.hash);
   });
 });
 </script>
