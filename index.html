@@ -925,7 +925,7 @@ function updateFxBanner() {
   if (!pricesLive || !Object.keys(fxRates).length) return;
   const strip  = document.getElementById('fxRatesStrip');
   const banner = document.getElementById('fxBanner');
-  const supported = ['BDT','USD','SAR','GBP','AUD','INR'];
+  const supported = ['BDT','USD','SAR','AED','GBP','AUD','INR','CAD','MYR','JPY','IDR' ];
   strip.innerHTML = supported.map(cur => {
     const r = fxRates[cur];
     if (!r) return '';
