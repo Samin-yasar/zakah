@@ -3,13 +3,14 @@
    Samin's Initiatives
    ════════════════════════════════════════ */
 
-const CACHE_NAME   = 'zakah-calc-v7';
-const DATA_CACHE   = 'zakah-data-v7';
+const CACHE_NAME   = 'zakah-calc-v8';
+const DATA_CACHE   = 'zakah-data-v8';
 
 // Core shell
 const SHELL_ASSETS = [
   './index.html',
   './styles.css',
+  './pdf-export.js',          
   './translations/en.js',   
   './translations/bn.js',
   './manifest.json',
@@ -29,7 +30,7 @@ self.addEventListener('install', event => {
   );
 });
 
-/* ── ACTIVATE: clean up old caches ── */
+/* ── ACTIVATE: clean up old caches, notify clients of update ── */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -39,6 +40,14 @@ self.addEventListener('activate', event => {
           .map(k => caches.delete(k))
       )
     ).then(() => self.clients.claim())
+     .then(() => {
+       // ← added: tell all open tabs a new version is active
+       self.clients.matchAll({ type: 'window' }).then(clients => {
+         clients.forEach(client =>
+           client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME })
+         );
+       });
+     })
   );
 });
 
@@ -71,7 +80,8 @@ async function networkFirstWithCache(request, cacheName) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch {
+  } catch (err) {
+    console.warn('[SW] Network-first fetch failed, serving cache:', request.url, err); // ← added
     const cached = await cache.match(request);
     return cached || new Response(JSON.stringify({ error: 'offline' }), {
       headers: { 'Content-Type': 'application/json' }
@@ -89,7 +99,8 @@ async function cacheFirstWithNetwork(request, cacheName) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch {
+  } catch (err) {
+    console.warn('[SW] Cache-first fetch failed, falling back to index.html:', request.url, err); // ← added
     return await caches.match('./index.html') ||   
       new Response('App is offline', { status: 503 });
   }
@@ -101,6 +112,9 @@ async function staleWhileRevalidate(request, cacheName) {
   const fetchPromise = fetch(request).then(response => {
     if (response.ok) cache.put(request, response.clone());
     return response;
-  }).catch(() => cached);
+  }).catch(err => {
+    console.warn('[SW] Stale-while-revalidate revalidation failed:', request.url, err); // ← added
+    return cached;
+  });
   return cached || fetchPromise;
 }
