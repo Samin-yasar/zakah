@@ -85,6 +85,23 @@ function _drawPageHeader(doc) {
   return 18;
 }
 
+/* ── Load image as base64 helper ────────────────────────── */
+function _loadImageAsBase64(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+    img.src = src;
+  });
+}
+
 /* ══════════════════════════════════════════════════════════
    MAIN EXPORT FUNCTION
    ══════════════════════════════════════════════════════════ */
@@ -106,7 +123,15 @@ async function exportZakatPDF() {
     /* 1. Fetch date */
     const dateInfo = await fetchReportDate();
 
-    /* 2. Re-compute all values (mirrors calc() logic) */
+    /* 2. Pre-load icon */
+    let logoBase64 = null;
+    try {
+      logoBase64 = await _loadImageAsBase64('icons/icon-96x96.png');
+    } catch (_) {
+      console.warn('[PDF] Could not load icon, falling back to text.');
+    }
+
+    /* 3. Re-compute all values (mirrors calc() logic) */
     const prices = getConvertedPrices();   // global fn from main script
     const { goldPerGram, silverPerGram } = prices;
     const cur     = typeof currentCurrency !== 'undefined' ? currentCurrency : 'BDT';
@@ -216,7 +241,7 @@ async function exportZakatPDF() {
     const isEligible = nisabValue > 0 && netWealth >= nisabValue;
     const zakahDue   = isEligible ? netWealth * zakahRate : 0;
 
-    /* 3. Build PDF ─────────────────────────────────────────── */
+    /* 4. Build PDF ─────────────────────────────────────────── */
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -241,12 +266,19 @@ async function exportZakatPDF() {
     doc.setFillColor(...GOLD_C);
     doc.rect(0, 0, 210, 3.5, 'F');
 
-    doc.setFillColor(...GOLD_C);
-    doc.circle(ML + 11, 24, 9.5, 'F');
-    doc.setTextColor(...DARK_C);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('ZC', ML + 11, 27.5, { align: 'center' });
+    /* ── LOGO: icon-96x96.png or fallback to ZC text ───────── */
+    if (logoBase64) {
+      /* Icon is 19×19mm, centered at same position as the old gold circle */
+      doc.addImage(logoBase64, 'PNG', ML + 1.5, 14.5, 19, 19);
+    } else {
+      /* Fallback: gold circle with ZC text */
+      doc.setFillColor(...GOLD_C);
+      doc.circle(ML + 11, 24, 9.5, 'F');
+      doc.setTextColor(...DARK_C);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('ZC', ML + 11, 27.5, { align: 'center' });
+    }
 
     doc.setTextColor(...WHITE_C);
     doc.setFont('helvetica', 'bold');
@@ -514,7 +546,7 @@ async function exportZakatPDF() {
       doc.text(`Page ${p} of ${totalPages}`, 210 - MR, 293, { align: 'right' });
     }
 
-    /* 4. Save the PDF */
+    /* 5. Save the PDF */
     doc.save(`zakah-report-${dateInfo.iso}.pdf`);
 
   } catch (err) {
