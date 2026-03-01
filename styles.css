@@ -946,7 +946,7 @@ footer {
 .fx-rate-item { display: flex; align-items: center; gap: 4px; }
 .fx-rate-item span { color: var(--gold-light); font-weight: 600; }
 
-/* Price disclaimer — moved here from inline style */
+/* Price disclaimer */
 .price-disclaimer {
   font-size: 11px;
   color: var(--text-muted);
@@ -1064,7 +1064,6 @@ footer {
   flex-shrink: 0;
 }
 
-/* Per-platform accent colours */
 .share-opt--copy     .share-opt-icon { background: rgba(59,130,246,0.15);   color: #60a5fa; }
 .share-opt--facebook .share-opt-icon { background: rgba(59,89,152,0.18);    color: #7baaf7; }
 .share-opt--whatsapp .share-opt-icon { background: rgba(37,211,102,0.15);   color: #4ade80; }
@@ -1075,7 +1074,6 @@ footer {
 .share-opt--whatsapp:hover { border-color: rgba(37,211,102,0.4);  }
 .share-opt--more:hover     { border-color: rgba(201,168,76,0.4);  }
 
-/* Copy success flash */
 .share-opt--copy.copied {
   border-color: rgba(74,222,128,0.5);
   background: rgba(74,222,128,0.07);
@@ -1167,4 +1165,217 @@ body:has(.pwa-banner:not([hidden])) footer { padding-bottom: 100px; }
   .pwa-banner-inner    { padding: 12px; }
   .pwa-banner-text strong { font-size: 13px; }
   .pwa-btn-install     { padding: 8px 14px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT THEME — Illuminated Manuscript / Islamic Parchment
+   ═══════════════════════════════════════════════════════════ */
+body.light-theme {
+  --bg:           #faf5e9;
+  --surface:      #fff9ee;
+  --surface2:     #f3ead6;
+  --surface3:     #ebe0c4;
+  --border:       #d4c49a;
+  --border-light: #c0ae80;
+  --gold:         #9a6f1a;
+  --gold-light:   #7a5010;
+  --gold-dim:     #c49a3a;
+  --teal:         #1a6b60;
+  --teal-dim:     #c4e4df;
+  --red:          #b83228;
+  --green:        #2a7040;
+  --text:         #251208;
+  --text-muted:   #5c3e1a;
+  --text-dim:     #8a6a38;
+  --accent:       #1a4fa0;
+  --shadow:        0 4px 24px rgba(100,70,20,0.12);
+  --shadow-gold:   0 0 30px rgba(154,111,26,0.10);
+}
+
+body.light-theme {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(154,111,26,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(26,107,96,0.06) 0%, transparent 50%);
+}
+
+/* Light theme — softer geometric pattern */
+body.light-theme::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%239a6f1a' stroke-width='0.4' opacity='0.2'%3E%3Cpolygon points='30,5 55,20 55,40 30,55 5,40 5,20'/%3E%3Cpolygon points='30,15 45,22 45,38 30,45 15,38 15,22'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.25;
+}
+
+body.light-theme header {
+  background: linear-gradient(180deg, rgba(250,245,233,0.98) 0%, rgba(250,245,233,0.88) 100%);
+  border-bottom-color: var(--border);
+}
+
+body.light-theme .section-header         { background: var(--surface2); }
+body.light-theme .section-header:hover   { background: var(--surface3); }
+body.light-theme .results-header         { background: linear-gradient(135deg, #eee4c8, #e4d9b0); }
+body.light-theme .share-modal            { background: var(--surface); }
+body.light-theme .share-modal-header     { background: linear-gradient(135deg, #eee4c8, #e4d9b0); }
+body.light-theme footer                  { background: var(--surface2); border-top-color: var(--border); }
+
+body.light-theme .info-box               { background: rgba(26,107,96,0.06);  border-color: rgba(26,107,96,0.22);  color: var(--teal); }
+body.light-theme .info-box.warning       { background: rgba(184,50,40,0.06);  border-color: rgba(184,50,40,0.2);   color: var(--red); }
+body.light-theme .info-box.gold          { background: rgba(154,111,26,0.07); border-color: rgba(154,111,26,0.22); color: var(--gold); }
+body.light-theme .quran-banner           { background: rgba(154,111,26,0.05); border-color: rgba(154,111,26,0.15); }
+body.light-theme .price-panel-header     { background: var(--surface3); }
+body.light-theme .price-grid             { background: var(--surface2); }
+body.light-theme .pwa-banner             { background: linear-gradient(135deg, #eee4c8 0%, #faf5e9 100%); border-top-color: rgba(154,111,26,0.3); }
+body.light-theme .share-overlay          { background: rgba(37,18,8,0.5); }
+body.light-theme .tooltip-icon:hover::after { background: #ede3ca; color: var(--text); }
+
+body.light-theme input[type="number"],
+body.light-theme input[type="text"],
+body.light-theme select.field-select     { background: var(--surface); color: var(--text); }
+
+body.light-theme .nisab-bar-track        { background: var(--surface3); }
+body.light-theme .price-cell-val.loading-shimmer {
+  background: linear-gradient(90deg, var(--surface3) 25%, var(--surface2) 50%, var(--surface3) 75%);
+  background-size: 200% 100%;
+}
+body.light-theme ::-webkit-scrollbar-track { background: var(--bg); }
+body.light-theme ::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* ═══════════════════════════════════════════════════════════
+   THEME TOGGLE BUTTON — Artisan Islamic Icon
+   ═══════════════════════════════════════════════════════════ */
+.btn-theme-toggle {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+/* Glow halo on hover */
+.btn-theme-toggle:hover {
+  border-color: var(--gold-dim);
+  background: rgba(201,168,76,0.08);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.12), 0 0 18px rgba(201,168,76,0.18);
+}
+body.light-theme .btn-theme-toggle:hover {
+  box-shadow: 0 0 0 3px rgba(154,111,26,0.12), 0 0 18px rgba(154,111,26,0.15);
+}
+
+/* SVG icon container */
+.theme-icon-wrap {
+  width: 26px;
+  height: 26px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The two icon states */
+.theme-icon-wrap .icon-dark,
+.theme-icon-wrap .icon-light {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* Dark mode shows crescent; light mode hidden */
+.theme-icon-wrap .icon-dark  {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+.theme-icon-wrap .icon-light {
+  opacity: 0;
+  transform: rotate(-60deg) scale(0.6);
+}
+
+/* Light theme: show shamsa, hide crescent */
+body.light-theme .theme-icon-wrap .icon-dark  {
+  opacity: 0;
+  transform: rotate(60deg) scale(0.6);
+}
+body.light-theme .theme-icon-wrap .icon-light {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* Click spin */
+.btn-theme-toggle.spinning .theme-icon-wrap {
+  animation: themeIconSpin 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes themeIconSpin {
+  0%   { transform: rotate(0deg)   scale(1); }
+  45%  { transform: rotate(150deg) scale(0.7); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Ripple burst */
+.btn-theme-toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(201,168,76,0.4) 0%, transparent 70%);
+  opacity: 0;
+  transform: scale(0.3);
+}
+.btn-theme-toggle.ripple::after {
+  animation: themeRipple 0.5s ease-out forwards;
+}
+@keyframes themeRipple {
+  0%   { opacity: 0.8; transform: scale(0.3); }
+  100% { opacity: 0;   transform: scale(2.5); }
+}
+
+/* Tooltip label */
+.btn-theme-toggle::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  font-family: var(--font-body);
+}
+.btn-theme-toggle:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Smooth theme transitions across all elements */
+body, header, footer,
+.section-card, .section-header, .section-body,
+.settings-card, .results-panel, .results-header,
+.price-panel, .price-panel-header, .price-grid, .price-cell,
+.share-modal, .share-modal-header,
+.quran-banner, .info-box,
+.pill-toggle, .currency-select,
+input[type="number"], input[type="text"], select.field-select,
+.badge-small, .source-badge, .fx-banner,
+.chevron, .radio-btn {
+  transition:
+    background-color 0.32s ease,
+    border-color 0.32s ease,
+    color 0.32s ease,
+    box-shadow 0.32s ease;
 }
