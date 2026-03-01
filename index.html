@@ -80,7 +80,107 @@
         <option value="JPY">¥ JPY</option>
         <option value="IDR">RP IDR</option>
       </select>
-      
+
+      <!-- ═══ ARTISAN THEME TOGGLE ═══
+           Dark mode icon: Crescent moon with a star (hilal) 
+           Light mode icon: 8-pointed Shamsa / Rub el Hizb rosette
+      -->
+      <button
+        class="btn-theme-toggle"
+        id="themeToggleBtn"
+        onclick="toggleTheme()"
+        aria-label="Toggle light/dark theme"
+        data-tooltip="Toggle theme"
+      >
+        <div class="theme-icon-wrap" id="themeIconWrap">
+
+          <!-- DARK MODE ICON: Crescent + Star (Hilal) -->
+          <div class="icon-dark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Crescent moon body -->
+              <path
+                d="M14.5 3.2A8 8 0 1 0 18.8 14.5 6.2 6.2 0 0 1 14.5 3.2Z"
+                fill="none"
+                stroke="#e6c96e"
+                stroke-width="1.3"
+                stroke-linejoin="round"
+              />
+              <!-- Inner crescent cutout arc feel -->
+              <path
+                d="M14.7 3.5A6 6 0 0 1 18.5 14"
+                stroke="#e6c96e"
+                stroke-width="0.55"
+                stroke-linecap="round"
+                opacity="0.45"
+              />
+              <!-- 4-pointed star cluster -->
+              <g transform="translate(17.2,4.5) rotate(22)">
+                <path d="M0-2.4 0.55-0.55 2.4 0 0.55 0.55 0 2.4 -0.55 0.55 -2.4 0 -0.55-0.55Z"
+                  fill="#e6c96e" opacity="0.9" transform="scale(0.58)"/>
+              </g>
+              <!-- Tiny dot star -->
+              <circle cx="17.8" cy="7.4" r="0.65" fill="#e6c96e" opacity="0.6"/>
+              <!-- Subtle glow dots -->
+              <circle cx="5"    cy="5.5" r="0.4"  fill="#e6c96e" opacity="0.3"/>
+              <circle cx="3.5"  cy="9"   r="0.3"  fill="#e6c96e" opacity="0.2"/>
+            </svg>
+          </div>
+
+          <!-- LIGHT MODE ICON: 8-pointed Shamsa / Islamic geometric rosette -->
+          <div class="icon-light" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer 8-pointed star (Rub el Hizb / Shamsa) -->
+              <path
+                d="M11 1.5
+                   L12.5 5.5 L16.2 3.5 L14.5 7.3
+                   L18.5 8.5 L15 11
+                   L18.5 13.5 L14.5 14.7
+                   L16.2 18.5 L12.5 16.5
+                   L11 20.5 L9.5 16.5
+                   L5.8 18.5 L7.5 14.7
+                   L3.5 13.5 L7 11
+                   L3.5 8.5 L7.5 7.3
+                   L5.8 3.5 L9.5 5.5 Z"
+                fill="none"
+                stroke="#9a6f1a"
+                stroke-width="1.1"
+                stroke-linejoin="round"
+              />
+              <!-- Inner octagon ring -->
+              <path
+                d="M11 5.8
+                   L12.8 7.2 L14.8 6.8 L15.2 8.8
+                   L16.6 10 L16.2 12.2 L14.8 13.4
+                   L15.2 15.2 L13 15.6 L11 16.4
+                   L9 15.6 L6.8 15.2 L7.2 13.4
+                   L5.8 12.2 L5.4 10 L6.8 8.8
+                   L7.2 6.8 L9.2 7.2 Z"
+                fill="none"
+                stroke="#9a6f1a"
+                stroke-width="0.7"
+                stroke-linejoin="round"
+                opacity="0.6"
+              />
+              <!-- Centre sun disc -->
+              <circle cx="11" cy="11" r="2.6" fill="none" stroke="#9a6f1a" stroke-width="1.1"/>
+              <circle cx="11" cy="11" r="1.1" fill="#9a6f1a" opacity="0.7"/>
+              <!-- 8 radial spokes between star points -->
+              <g stroke="#9a6f1a" stroke-width="0.5" opacity="0.35">
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(0,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(45,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(90,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(135,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(180,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(225,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(270,11,11)"/>
+                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(315,11,11)"/>
+              </g>
+            </svg>
+          </div>
+
+        </div>
+      </button>
+
       <!-- Share button -->
       <button class="btn-icon-header" id="shareBtn" onclick="openShareModal()" title="Share">
         ↑
@@ -590,9 +690,7 @@
 </div>
 </main>
 
-<!-- ═══════════════════════════════════════════════════════════
-     SHARE MODAL
-     ═══════════════════════════════════════════════════════════ -->
+<!-- SHARE MODAL -->
 <div class="share-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
   <div class="share-modal">
     <div class="share-modal-header">
@@ -672,6 +770,37 @@
 
 <script>
 /* ════════════════════════════════════════
+   THEME TOGGLE — Artisan Islamic Icon
+   ════════════════════════════════════════ */
+(function initTheme() {
+  // Respect saved preference; fall back to system preference
+  const saved = localStorage.getItem('zakat_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isLight = saved ? saved === 'light' : !prefersDark;
+  if (isLight) document.body.classList.add('light-theme');
+  updateThemeTooltip(isLight);
+})();
+
+function toggleTheme() {
+  const btn  = document.getElementById('themeToggleBtn');
+  const isLight = document.body.classList.toggle('light-theme');
+
+  // Spin + ripple animation
+  btn.classList.remove('spinning', 'ripple');
+  void btn.offsetWidth; // reflow to restart animation
+  btn.classList.add('spinning', 'ripple');
+  setTimeout(() => btn.classList.remove('spinning', 'ripple'), 600);
+
+  localStorage.setItem('zakat_theme', isLight ? 'light' : 'dark');
+  updateThemeTooltip(isLight);
+}
+
+function updateThemeTooltip(isLight) {
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.setAttribute('data-tooltip', isLight ? 'Switch to night' : 'Switch to day');
+}
+
+/* ════════════════════════════════════════
    LANGUAGE LOADER
    ════════════════════════════════════════ */
 let currentLang = localStorage.getItem('zakat_lang') || 'en';
@@ -707,7 +836,6 @@ function applyLang(lang) {
     if (L[key] !== undefined) el.textContent = L[key];
   });
 
-  /* ── Tooltip translation ── */
   document.querySelectorAll('[data-tip-key]').forEach(el => {
     const key = el.getAttribute('data-tip-key');
     if (L[key] !== undefined) el.setAttribute('data-tip', L[key]);
@@ -925,7 +1053,7 @@ function updateFxBanner() {
   if (!pricesLive || !Object.keys(fxRates).length) return;
   const strip  = document.getElementById('fxRatesStrip');
   const banner = document.getElementById('fxBanner');
-  const supported = ['BDT','USD','SAR','AED','GBP','AUD','INR','CAD','MYR','JPY','IDR' ];
+  const supported = ['BDT','USD','SAR','AED','GBP','AUD','INR','CAD','MYR','JPY','IDR'];
   strip.innerHTML = supported.map(cur => {
     const r = fxRates[cur];
     if (!r) return '';
@@ -1216,7 +1344,7 @@ const HASH_SECTION_MAP = {
   'business':    'sec-biz',
   'section-e':   'sec-liab',
   'liabilities': 'sec-liab',
-  'results':     null,   
+  'results':     null,
   'summary':     null,
   'settings':    null,
   'prices':      null,
@@ -1228,27 +1356,17 @@ function navigateToHash(hash) {
   if (!hash || hash === '#') return;
   const key = hash.replace('#', '').toLowerCase();
   if (!(key in HASH_SECTION_MAP)) return;
-
   const sectionCardId = HASH_SECTION_MAP[key];
-
-  /* Open the accordion if needed */
   if (sectionCardId) {
     const card = document.getElementById(sectionCardId);
-    if (card && !card.classList.contains('open')) {
-      card.classList.add('open');
-    }
+    if (card && !card.classList.contains('open')) card.classList.add('open');
   }
-
-  /* Scroll to the anchor (slight delay lets the accordion expand first) */
   setTimeout(() => {
     const anchor = document.getElementById(key);
-    if (anchor) {
-      anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 80);
 }
 
-/* Handle hash on load and on back/forward */
 window.addEventListener('hashchange', () => navigateToHash(window.location.hash));
 
 /* ════════════════════════════════════════
@@ -1312,7 +1430,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLang(currentLang);
     calc();
     fetchPrices();
-    /* Navigate to hash after page is fully ready */
     if (window.location.hash) navigateToHash(window.location.hash);
   });
 });
