@@ -772,13 +772,11 @@
 /* ════════════════════════════════════════
    THEME TOGGLE — Artisan Islamic Icon
    ════════════════════════════════════════ */
-(function initTheme() {
-  // Respect saved preference; fall back to system preference
+((function initTheme() {
   const saved = localStorage.getItem('zakat_theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isLight = saved ? saved === 'light' : !prefersDark;
-  if (isLight) document.body.classList.add('light-theme');
-  updateThemeTooltip(isLight);
+  if (isLight) document.documentElement.classList.add('light-theme');
 })();
 
 function toggleTheme() {
