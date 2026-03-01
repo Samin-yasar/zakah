@@ -49,7 +49,6 @@
   }
 </style>
 
-<!-- jsPDF — loaded early so it's ready when user clicks Export PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body>
@@ -75,7 +74,9 @@
         <option value="GBP">£ GBP</option>
         <option value="AUD">A$ AUD</option>
         <option value="INR">₹ INR</option>
+        <option value="CAD">C$ CAD</option>
       </select>
+      
       <!-- Share button -->
       <button class="btn-icon-header" id="shareBtn" onclick="openShareModal()" title="Share">
         ↑
