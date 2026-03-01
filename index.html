@@ -71,10 +71,14 @@
         <option value="BDT">৳ BDT</option>
         <option value="USD">$ USD</option>
         <option value="SAR">﷼ SAR</option>
+        <option value="AED">د.إ AED</option>
         <option value="GBP">£ GBP</option>
         <option value="AUD">A$ AUD</option>
         <option value="INR">₹ INR</option>
         <option value="CAD">C$ CAD</option>
+        <option value="MYR">MR MYR</option>
+        <option value="JPY">¥ JPY</option>
+        <option value="IDR">RP IDR</option>
       </select>
       
       <!-- Share button -->
@@ -729,7 +733,7 @@ function setLang(lang) {
 const TROY_OZ_TO_GRAM = 31.1035;
 const BHORI_TO_GRAM   = 11.6638;
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
-const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', GBP:'£', AUD:'A$', INR:'₹' };
+const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', AED: 'د.إ', GBP:'£', AUD:'A$', INR:'₹', CAD: 'C$', MYR: 'MR', JPY: '¥', IDR: 'RP' };
 const METALS_URL = './data/metals.json';
 const RATES_URL  = './data/rates.json';
 
