@@ -3,8 +3,8 @@
    Samin's Initiatives
    ════════════════════════════════════════ */
 
-const CACHE_NAME   = 'zakah-calc-v8';
-const DATA_CACHE   = 'zakah-data-v8';
+const CACHE_NAME   = 'zakah-calc-v9';
+const DATA_CACHE   = 'zakah-data-v9';
 
 // Core shell
 const SHELL_ASSETS = [
