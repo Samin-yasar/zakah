@@ -181,4 +181,19 @@ window.LANG_DATA = {
   /* ── PDF export ───────────────────────────────────────── */
   export_pdf:         "Export PDF",
   export_pdf_gen:     "Generating…",
+
+  /* ── Local Storage / Data Persistence ────────────────── */
+  data_saved:         "Data saved locally",
+  reset_confirm:      "Reset all fields and clear your saved data? This cannot be undone.",
+
+  /* ── Disclaimer ───────────────────────────────────────── */
+  disclaimer_title:       "Important Disclaimer",
+  disclaimer_subtitle:    "Please read before acting on results",
+  disclaimer_body:        "This calculator is provided as a free educational tool for Zakah estimation purposes only. Samin's Initiatives bears no responsibility or liability for any incorrect Zakah calculation arising from inaccurate, incomplete, or erroneous data entered by the user. The results generated are purely indicative estimates and do not constitute a formal religious ruling (fatwa). Zakah is a serious act of worship (ibadah), and the accuracy of the calculation is entirely dependent on the correctness of the information you provide.",
+  disclaimer_scholar_label: "Consult a Scholar:",
+  disclaimer_scholar:     "For a binding and authoritative determination of your Zakah obligation, we strongly urge you to consult a qualified Mufti or Islamic scholar (Aalim). A scholar can account for your specific circumstances, applicable madhab (school of jurisprudence), and nuanced asset classifications that no general calculator can fully address.",
+  disc_tag_estimate:  "📊 Estimation Only",
+  disc_tag_nofatwa:   "🚫 Not a Fatwa",
+  disc_tag_scholar:   "🕌 Consult a Mufti",
+  disc_tag_local:     "🔒 No Data Stored on Servers",
 };
