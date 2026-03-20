@@ -87,7 +87,7 @@
       "name": "Calculate Zakah",
       "short_name": "Calculate",
       "description": "Open the Zakah calculator directly",
-      "url": "./zakah-calculator.html#calculator",
+      "url": "./index.html#section-a",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
@@ -99,7 +99,7 @@
   "protocol_handlers": [
     {
       "protocol": "web+zakah",
-      "url": "./zakah-calculator.html?uri=%s"
+      "url": "./index.html?uri=%s"
     }
   ],
 
