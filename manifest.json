@@ -1,7 +1,8 @@
 {
-  "name": "Zakah Calculator — Samin's Initiatives",
+  "name": "Zakah Calculator",
   "short_name": "Zakah Calc",
   "description": "A comprehensive, scholarly-accurate Zakah calculator covering all asset categories including digital wallets, investments, and business assets.",
+  "id": "com.saminyasar.zakahcalc",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -12,7 +13,6 @@
   "lang": "en",
   "dir": "ltr",
   "categories": ["finance", "utilities", "productivity"],
-  "id": "zakah-calculator-samins-initiatives",
 
   "icons": [
     {
@@ -92,6 +92,22 @@
     }
   ],
 
-  "related_applications": [],
-  "prefer_related_applications": false
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+
+  "protocol_handlers": [
+    {
+      "protocol": "web+zakah",
+      "url": "./zakah-calculator.html?uri=%s"
+    }
+  ],
+
+  "handle_links": "preferred",
+
+  "scope_extensions": [
+    {
+      "origin": "https://samin-yasar.github.io"
+    }
+  ]
 }
