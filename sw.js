@@ -3,15 +3,22 @@
    Samin's Initiatives
    ════════════════════════════════════════ */
 
-const CACHE_NAME   = 'zakah-calc-v9';
-const DATA_CACHE   = 'zakah-data-v9';
+const CACHE_NAME   = 'zakah-calc-v10';
+const DATA_CACHE   = 'zakah-data-v10';
+
+// Periodic sync tag — must match the tag registered in the client
+const PERIODIC_SYNC_TAG = 'zakah-rates-refresh';
+
+// Background sync tag — used when a rates fetch fails offline
+const BGS_TAG = 'zakah-rates-bg-sync';
 
 // Core shell
 const SHELL_ASSETS = [
   './index.html',
   './styles.css',
-  './pdf-export.js',          
-  './translations/en.js',   
+  './pdf-export.js',
+  './libs/jspdf.umd.min.js',
+  './translations/en.js',
   './translations/bn.js',
   './manifest.json',
   'https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap',
@@ -21,7 +28,9 @@ const DATA_ASSETS = [
   './data/metals.json',
 ];
 
-/* ── INSTALL: cache the app shell ── */
+/* ════════════════════════════════════════
+   INSTALL — cache the app shell
+   ════════════════════════════════════════ */
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -30,7 +39,9 @@ self.addEventListener('install', event => {
   );
 });
 
-/* ── ACTIVATE: clean up old caches, notify clients of update ── */
+/* ════════════════════════════════════════
+   ACTIVATE — purge old caches, claim clients
+   ════════════════════════════════════════ */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -41,7 +52,6 @@ self.addEventListener('activate', event => {
       )
     ).then(() => self.clients.claim())
      .then(() => {
-       // ← added: tell all open tabs a new version is active
        self.clients.matchAll({ type: 'window' }).then(clients => {
          clients.forEach(client =>
            client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME })
@@ -51,12 +61,15 @@ self.addEventListener('activate', event => {
   );
 });
 
+/* ════════════════════════════════════════
+   FETCH — routing strategies
+   ════════════════════════════════════════ */
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Data files: network-first (try fresh, fall back to cache)
+  // Data files: network-first, queue for background sync on failure
   if (DATA_ASSETS.some(p => event.request.url.includes(p.replace('./', '')))) {
-    event.respondWith(networkFirstWithCache(event.request, DATA_CACHE));
+    event.respondWith(networkFirstWithBGSync(event.request));
     return;
   }
 
@@ -71,20 +84,69 @@ self.addEventListener('fetch', event => {
   event.respondWith(cacheFirstWithNetwork(event.request, CACHE_NAME));
 });
 
-/* ── Strategy: Network-first, cache fallback ── */
-async function networkFirstWithCache(request, cacheName) {
-  const cache = await caches.open(cacheName);
+/* ════════════════════════════════════════
+   PERIODIC BACKGROUND SYNC
+   Refreshes gold/metal rate data on a schedule
+   ════════════════════════════════════════ */
+self.addEventListener('periodicsync', event => {
+  if (event.tag === PERIODIC_SYNC_TAG) {
+    event.waitUntil(refreshDataCache());
+  }
+});
+
+async function refreshDataCache() {
+  const cache = await caches.open(DATA_CACHE);
+  await Promise.allSettled(
+    DATA_ASSETS.map(async path => {
+      try {
+        const response = await fetch(path);
+        if (response.ok) {
+          await cache.put(path, response);
+          console.log('[SW] Periodic sync refreshed:', path);
+        }
+      } catch (err) {
+        console.warn('[SW] Periodic sync fetch failed:', path, err);
+      }
+    })
+  );
+  // Notify open clients so they can re-render with fresh rates
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client =>
+    client.postMessage({ type: 'RATES_UPDATED' })
+  );
+}
+
+/* ════════════════════════════════════════
+   BACKGROUND SYNC
+   Retries a failed data fetch once connectivity is restored
+   ════════════════════════════════════════ */
+self.addEventListener('sync', event => {
+  if (event.tag === BGS_TAG) {
+    event.waitUntil(refreshDataCache());
+  }
+});
+
+/* ════════════════════════════════════════
+   FETCH STRATEGIES
+   ════════════════════════════════════════ */
+
+// Network-first for data assets; registers a background sync if offline
+async function networkFirstWithBGSync(request) {
+  const cache = await caches.open(DATA_CACHE);
   try {
     const response = await fetch(request);
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
+    if (response.ok) cache.put(request, response.clone());
     return response;
   } catch (err) {
-    console.warn('[SW] Network-first fetch failed, serving cache:', request.url, err); // ← added
+    console.warn('[SW] Data fetch failed, queuing background sync:', request.url, err);
+    try {
+      await self.registration.sync.register(BGS_TAG);
+    } catch {
+      // sync API not available (e.g. Firefox) — silent fail
+    }
     const cached = await cache.match(request);
     return cached || new Response(JSON.stringify({ error: 'offline' }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
@@ -100,8 +162,8 @@ async function cacheFirstWithNetwork(request, cacheName) {
     }
     return response;
   } catch (err) {
-    console.warn('[SW] Cache-first fetch failed, falling back to index.html:', request.url, err); // ← added
-    return await caches.match('./index.html') ||   
+    console.warn('[SW] Cache-first fetch failed, falling back to index.html:', request.url, err);
+    return await caches.match('./index.html') ||
       new Response('App is offline', { status: 503 });
   }
 }
@@ -113,7 +175,7 @@ async function staleWhileRevalidate(request, cacheName) {
     if (response.ok) cache.put(request, response.clone());
     return response;
   }).catch(err => {
-    console.warn('[SW] Stale-while-revalidate revalidation failed:', request.url, err); // ← added
+    console.warn('[SW] Stale-while-revalidate revalidation failed:', request.url, err);
     return cached;
   });
   return cached || fetchPromise;
