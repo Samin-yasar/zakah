@@ -51,7 +51,7 @@ All computation happens **entirely in the user's browser**. No data is ever sent
 
 ## Live Demo
 
-🔗 **[https://samin-yasar.github.io/zakah](https://samin-yasar.github.io/zakah)**
+🔗 **[https://samin-yasar.dev/zakah](https://samin-yasar.dev/zakah)**
 
 ---
 
@@ -386,9 +386,9 @@ This project is licensed under the terms of the [LICENSE](./LICENSE) file in thi
 
 <div align="center">
 
-**Built with ☽ by [Samin Yasar](https://samin-yasar.github.io)**  
+**Built with ☽ by [Samin Yasar](https://samin-yasar.dev)**  
 *Building tools for the Ummah with transparency and trust*
 
-[Privacy Policy](./policies/privacy-notice.html) · [Open Source](https://github.com/Samin-yasar/zakah) · [Contact](https://samin-yasar.github.io/#contact)
+[Privacy Policy](./policies/privacy-notice.html) · [Open Source](https://github.com/Samin-yasar/zakah) · [Contact](https://samin-yasar.dev/#contact)
 
 </div>
