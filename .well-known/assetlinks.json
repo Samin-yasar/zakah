@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.samin_yasar.zakah",
-        "sha256_cert_fingerprints": ["6E:85:50:17:E0:84:DD:ED:73:8F:23:0F:02:32:5E:23:24:A7:E3:BC:86:25:32:C4:15:6C:DC:3E:18:26:88:B7"]
-      }
-    }]
