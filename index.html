@@ -872,6 +872,14 @@ function lsRemove(key) {
   if (privacyMode) return false;
   try { localStorage.removeItem(key); return true; } catch (_) { return false; }
 }
+function escapeHtml(str = '') {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
 /* ════════════════════════════════════════
    THEME TOGGLE — Artisan Islamic Icon
@@ -1326,7 +1334,13 @@ function loadProfiles() {
 function renderProfiles() {
   const sel = document.getElementById('profileSelect');
   if (!sel) return;
-  sel.innerHTML = Object.keys(profiles).map(k => `<option value="${k}">${profiles[k].name || k}</option>`).join('');
+  sel.innerHTML = '';
+  Object.keys(profiles).forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = (profiles[k].name || k).slice(0, 60);
+    sel.appendChild(opt);
+  });
   sel.value = profiles[activeProfile] ? activeProfile : 'default';
   sel.onchange = () => {
     activeProfile = sel.value;
@@ -1340,7 +1354,7 @@ function createProfile() {
   const name = prompt('New profile name (local only):');
   if (!name) return;
   const id = `profile_${Date.now()}`;
-  profiles[id] = { name: name.trim(), data: collectFormData() };
+  profiles[id] = { name: name.trim().replace(/[<>"']/g, '').slice(0, 60), data: collectFormData() };
   activeProfile = id;
   renderProfiles();
   persistState();
@@ -1367,7 +1381,7 @@ async function deriveBackupKey(passphrase, salt) {
   const enc = new TextEncoder();
   const material = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
     material,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -1378,6 +1392,7 @@ async function deriveBackupKey(passphrase, salt) {
 async function exportEncryptedBackup() {
   const passphrase = document.getElementById('backupPassphrase')?.value || '';
   if (!passphrase) return alert('Enter a backup passphrase.');
+  if (passphrase.length < 16) return alert('Use a stronger passphrase (minimum 16 characters).');
   const payload = {
     version: APP_VERSION,
     createdAt: new Date().toISOString(),
@@ -1408,6 +1423,7 @@ async function importEncryptedBackup(event) {
   if (!file) return;
   const passphrase = document.getElementById('backupPassphrase')?.value || '';
   if (!passphrase) return alert('Enter backup passphrase first.');
+  if (passphrase.length < 16) return alert('Use a stronger passphrase (minimum 16 characters).');
   try {
     const raw = JSON.parse(await file.text());
     const salt = Uint8Array.from(atob(raw.salt), c => c.charCodeAt(0));
@@ -1422,8 +1438,11 @@ async function importEncryptedBackup(event) {
     renderProfiles();
     persistState();
     calc();
-  } catch (_) {
-    alert('Backup import failed. Check passphrase or file.');
+  } catch (err) {
+    const msg = String(err?.message || '').toLowerCase();
+    if (msg.includes('json')) alert('Invalid backup file format.');
+    else if (msg.includes('decrypt') || msg.includes('operation')) alert('Decryption failed. Check passphrase or file integrity.');
+    else alert('Backup import failed.');
   } finally {
     event.target.value = '';
   }
@@ -1479,10 +1498,13 @@ function updateDataFootprint() {
     return;
   }
   panel.innerHTML = keys.map(k => {
-    const val = localStorage.getItem(k) || '';
+    const val = lsGet(k, '') || '';
     const size = new Blob([val]).size;
-    return `<div class="footprint-item"><span>${k}</span><span>${size} bytes</span><button class="btn-reset tiny" type="button" onclick="deleteStorageKey('${k}')">Delete</button></div>`;
+    return `<div class="footprint-item"><span>${escapeHtml(k)}</span><span>${size} bytes</span><button class="btn-reset tiny footprint-delete-btn" type="button" data-key="${encodeURIComponent(k)}">Delete</button></div>`;
   }).join('');
+  panel.querySelectorAll('.footprint-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteStorageKey(decodeURIComponent(btn.getAttribute('data-key') || '')));
+  });
 }
 
 function updateWizardLabel() {
@@ -1509,13 +1531,12 @@ function updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, inves
 }
 
 function updateExplainability({ totalAssets, liabTotal, netWealth, nisabValue, zakahRate, zakahDue }) {
-  document.getElementById('explainContent').innerHTML = `
-    <p><strong>Formula:</strong> Net Zakatable Wealth = Total Assets − Eligible Liabilities</p>
-    <p><strong>Values:</strong> ${fmt(totalAssets)} − ${fmt(liabTotal)} = ${fmt(netWealth)}</p>
-    <p><strong>Nisab Check:</strong> ${fmt(netWealth)} ${netWealth >= nisabValue ? '≥' : '<'} ${fmt(nisabValue)}</p>
-    <p><strong>Zakah:</strong> ${fmt(netWealth)} × ${(zakahRate * 100).toFixed(3)}% = ${fmt(zakahDue)}</p>
-    <p><strong>Assumptions:</strong> Only liabilities due within 12 months are deducted, and all calculations stay on-device.</p>
-  `;
+  document.getElementById('explainContent').textContent =
+`Formula: Net Zakatable Wealth = Total Assets − Eligible Liabilities
+Values: ${fmt(totalAssets)} − ${fmt(liabTotal)} = ${fmt(netWealth)}
+Nisab Check: ${fmt(netWealth)} ${netWealth >= nisabValue ? '≥' : '<'} ${fmt(nisabValue)}
+Zakah: ${fmt(netWealth)} × ${(zakahRate * 100).toFixed(3)}% = ${fmt(zakahDue)}
+Assumptions: Only liabilities due within 12 months are deducted, and all calculations stay on-device.`;
 }
 
 function updateScenarioComparison(netWealth, silverPerGram, goldPerGram) {
@@ -1525,12 +1546,11 @@ function updateScenarioComparison(netWealth, silverPerGram, goldPerGram) {
   const sSolar = netWealth >= silverN ? netWealth * 0.02577 : 0;
   const gLunar = netWealth >= goldN ? netWealth * 0.025 : 0;
   const gSolar = netWealth >= goldN ? netWealth * 0.02577 : 0;
-  document.getElementById('scenarioCompare').innerHTML = `
-    <div>Silver + Lunar: <strong>${fmt(sLunar)}</strong></div>
-    <div>Silver + Solar: <strong>${fmt(sSolar)}</strong></div>
-    <div>Gold + Lunar: <strong>${fmt(gLunar)}</strong></div>
-    <div>Gold + Solar: <strong>${fmt(gSolar)}</strong></div>
-  `;
+  document.getElementById('scenarioCompare').textContent =
+`Silver + Lunar: ${fmt(sLunar)}
+Silver + Solar: ${fmt(sSolar)}
+Gold + Lunar: ${fmt(gLunar)}
+Gold + Solar: ${fmt(gSolar)}`;
 }
 
 function updateStaleStatus() {
@@ -1573,18 +1593,22 @@ function buildSupportTemplate() {
 function copySupportTemplate() {
   const text = document.getElementById('supportTemplate')?.value || '';
   if (!text) return;
-  navigator.clipboard?.writeText(text).catch(() => {});
+  navigator.clipboard?.writeText(text).catch(() => {
+    alert('Copy failed. Please copy the template manually.');
+  });
 }
 
 async function updateIntegrityPanel() {
   const out = document.getElementById('integrityPanel');
   if (!out || !window.crypto?.subtle) return;
   try {
-    const [a, b] = await Promise.all([
+    const [a, b, c, d] = await Promise.all([
       fetch('./index.html', { cache: 'no-store' }).then(r => r.text()),
-      fetch('./styles.css', { cache: 'no-store' }).then(r => r.text())
+      fetch('./styles.css', { cache: 'no-store' }).then(r => r.text()),
+      fetch('./sw.js', { cache: 'no-store' }).then(r => r.text()),
+      fetch('./pdf-export.js', { cache: 'no-store' }).then(r => r.text())
     ]);
-    const bytes = new TextEncoder().encode(`${a}\n${b}\n${APP_VERSION}`);
+    const bytes = new TextEncoder().encode(`${a}\n${b}\n${c}\n${d}\n${APP_VERSION}`);
     const digest = await crypto.subtle.digest('SHA-256', bytes);
     const hex = Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
     out.textContent = `Version: ${APP_VERSION} · SHA-256: ${hex.slice(0, 24)}…`;
