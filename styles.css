@@ -310,7 +310,7 @@ header {
 .section-header:hover { background: var(--surface3); }
 
 .section-header-left { display: flex; align-items: center; gap: 12px; }
-.section-header-right { display:flex; align-items:center; gap:10px; }
+.section-header-right { display: flex; align-items: center; gap: 10px; }
 .section-icon {
   width: 36px; height: 36px;
   border-radius: 9px;
@@ -627,7 +627,7 @@ select.field-select { padding-left: 12px; appearance: none; cursor: pointer; }
 .result-stat-value.red   { color: var(--red); }
 .result-stat-value.big   { font-size: 26px; }
 .result-stat-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-.hawl-note { font-size:12px; color:var(--text-muted); margin-top:4px; }
+.hawl-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
 /* BREAKDOWN TABLE */
 .breakdown { padding: 20px 24px; border-top: 1px solid var(--border); }

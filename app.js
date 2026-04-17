@@ -67,7 +67,7 @@ function applyLang(lang) {
     const key = el.getAttribute('data-tip-key');
     if (L[key] !== undefined) el.setAttribute('data-tip', L[key]);
   });
-  ensureFieldTooltips();
+  refreshFieldTooltipMetadata();
 
   const nwRaw    = parseFloat(document.getElementById('r_netWealth')?.textContent?.replace(/[^\d.]/g,'') || '0');
   const nisabRaw = parseFloat(document.getElementById('r_nisabVal')?.textContent?.replace(/[^\d.]/g,'')  || '9999999');
@@ -90,6 +90,7 @@ const TROY_OZ_TO_GRAM = 31.1035;
 const BHORI_TO_GRAM   = 11.6638;
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
 const CACHE_KEYS = { metals: 'zakat_metals', fx: 'zakat_fx' };
+// Explicit 24h TTL for required cache keys.
 const CACHE_TTL_BY_KEY = {
   [CACHE_KEYS.metals]: CACHE_TTL_MS,
   [CACHE_KEYS.fx]: CACHE_TTL_MS
@@ -175,6 +176,7 @@ function cacheRead(key) {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object' || typeof obj.ts !== 'number' || !('data' in obj)) return null;
     const ttl = CACHE_TTL_BY_KEY[key] ?? CACHE_TTL_MS;
     if (Date.now() - obj.ts > ttl) return null;
     return obj.data;
@@ -185,7 +187,8 @@ function cacheReadStale(key) {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const obj = JSON.parse(raw);
-    return obj?.data ?? null;
+    if (!obj || typeof obj !== 'object' || !('data' in obj)) return null;
+    return obj.data;
   } catch (_) { return null; }
 }
 
@@ -249,12 +252,12 @@ async function fetchPrices(isManualRefresh = false) {
 
   } catch (err) {
     console.warn('Price fetch failed:', err.message);
-    const staleMetal = cacheReadStale(CACHE_KEYS.metals);
-    const staleFx    = cacheReadStale(CACHE_KEYS.fx);
-    if (staleMetal && staleFx) {
-      liveGoldUsdPerOz   = staleMetal.gold;
-      liveSilverUsdPerOz = staleMetal.silver;
-      fxRates            = staleFx;
+    const cachedMetalData = cacheReadStale(CACHE_KEYS.metals);
+    const cachedFxData    = cacheReadStale(CACHE_KEYS.fx);
+    if (cachedMetalData && cachedFxData) {
+      liveGoldUsdPerOz   = cachedMetalData.gold;
+      liveSilverUsdPerOz = cachedMetalData.silver;
+      fxRates            = cachedFxData;
       pricesLive         = true;
       onPricesReady('stale');
     } else {
@@ -294,12 +297,13 @@ function setShimmer(on) {
 
 function showFallback() {
   document.getElementById('manualFallback').classList.add('visible');
-  document.getElementById('fxBanner').style.display = 'none';
+  document.getElementById('fxBanner').classList.add('fx-banner-hidden');
   document.getElementById('metalSourceBadge').className = 'source-badge error';
   document.getElementById('fxSourceBadge').className    = 'source-badge error';
 }
 function hideFallback() {
   document.getElementById('manualFallback').classList.remove('visible');
+  document.getElementById('fxBanner').classList.remove('fx-banner-hidden');
   document.getElementById('metalSourceBadge').className = 'source-badge active';
   document.getElementById('fxSourceBadge').className    = 'source-badge active';
 }
@@ -357,7 +361,7 @@ function updateFxBanner() {
     const sym = CURRENCY_SYMBOLS[cur] || cur;
     return `<div class="fx-rate-item">${cur} <span>${sym}${r.toFixed(2)}</span></div>`;
   }).join('');
-  banner.style.display = 'flex';
+  banner.classList.remove('fx-banner-hidden');
 }
 
 /* ════════════════════════════════════════
@@ -374,9 +378,14 @@ function setCurrency(cur) {
 
 function getLabelText(labelEl) {
   if (!labelEl) return '';
-  const clone = labelEl.cloneNode(true);
-  clone.querySelectorAll('.tooltip-icon').forEach(el => el.remove());
-  return clone.textContent.replace(/\s+/g, ' ').trim();
+  let text = '';
+  labelEl.childNodes.forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
+    if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('tooltip-icon')) {
+      text += node.textContent;
+    }
+  });
+  return text.replace(/\s+/g, ' ').trim();
 }
 
 function ensureFieldTooltips() {
@@ -397,8 +406,25 @@ function ensureFieldTooltips() {
       icon.setAttribute('data-tip', fallback);
     }
 
-    const tip = icon.getAttribute('data-tip') || fallback;
+  });
+  refreshFieldTooltipMetadata();
+}
+
+function refreshFieldTooltipMetadata() {
+  document.querySelectorAll('.field').forEach(field => {
+    const input = field.querySelector('input[type="number"], input[type="text"], select');
+    const label = field.querySelector('label');
+    if (!input || !label) return;
+    let icon = label.querySelector('.tooltip-icon');
+    if (!icon) {
+      icon = document.createElement('span');
+      icon.className = 'tooltip-icon';
+      icon.textContent = '?';
+      label.appendChild(icon);
+    }
     const labelText = getLabelText(label) || 'Field';
+    const tip = icon.getAttribute('data-tip') || FIELD_TOOLTIPS[input.id] || `Enter the value for ${labelText}.`;
+    if (!icon.getAttribute('data-tip')) icon.setAttribute('data-tip', tip);
     input.setAttribute('title', tip);
     input.setAttribute('aria-label', `${labelText}. ${tip}`);
   });
@@ -789,6 +815,7 @@ window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = n
    INIT
    ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+  ensureFieldTooltips();
   const savedCur = localStorage.getItem('zakat_currency') || 'BDT';
   document.getElementById('currencySelect').value = savedCur;
   currentCurrency = savedCur;
