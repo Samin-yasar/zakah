@@ -432,7 +432,7 @@ header {
   pointer-events: none;
   font-weight: 500;
 }
-input[type="number"], input[type="text"], select.field-select {
+input[type="number"], input[type="text"], input[type="password"], textarea.field-select, select.field-select, input.field-select {
   width: 100%;
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -447,7 +447,7 @@ input[type="number"], input[type="text"], select.field-select {
 }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
-input[type="number"]:focus, input[type="text"]:focus, select.field-select:focus {
+input[type="number"]:focus, input[type="text"]:focus, input[type="password"]:focus, textarea.field-select:focus, select.field-select:focus, input.field-select:focus {
   border-color: var(--emerald);
   box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
 }
@@ -892,6 +892,102 @@ footer {
 .btn-refresh.spinning .spin { animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.wizard-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.wizard-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+.wizard-controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.wizard-btn { min-height: 40px; }
+
+.privacy-grid { display: grid; gap: 12px; }
+.privacy-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.privacy-mode-toggle p { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+.privacy-mode-status {
+  font-size: 12px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.25);
+  color: var(--emerald-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.pill-chip {
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text-muted);
+  border-radius: 20px;
+  font-size: 12px;
+  min-width: 62px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pill-chip.active {
+  background: linear-gradient(135deg, var(--emerald-dim), var(--emerald));
+  color: #fff;
+  border-color: transparent;
+}
+.profile-row, .backup-row, .reminder-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .profile-row, .backup-row, .reminder-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .profile-row, .backup-row, .reminder-row { grid-template-columns: 1fr; }
+}
+.network-status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.stale-status { font-size: 12px; color: var(--gold-light); }
+.explain-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  padding: 10px 12px;
+}
+.explain-panel > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  min-height: 28px;
+}
+.explain-panel > div {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.footprint-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(36,61,44,0.6);
+}
+.footprint-item:last-child { border-bottom: none; }
+.btn-reset.tiny { padding: 4px 8px; font-size: 11px; min-height: 28px; }
+.support-panel textarea { width: 100%; min-height: 120px; }
+.file-btn { display: inline-flex; justify-content: center; align-items: center; text-align: center; }
+#backupImportFile { display: none; }
+
+/* Larger tap targets */
+button, select, input, textarea, .share-option, .radio-btn { min-height: 40px; }
+
 .price-grid {
   display: grid;
   gap: 0;
@@ -1298,6 +1394,24 @@ html.light-theme .price-cell-val.loading-shimmer {
 }
 html.light-theme ::-webkit-scrollbar-track { background: var(--bg); }
 html.light-theme ::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* High contrast mode */
+html.high-contrast {
+  --bg: #000;
+  --surface: #000;
+  --surface2: #070707;
+  --surface3: #0f0f0f;
+  --border: #f5f5f5;
+  --border-light: #fff;
+  --text: #fff;
+  --text-muted: #f1f1f1;
+  --text-dim: #e0e0e0;
+  --emerald: #00ff9d;
+  --emerald-light: #00ff9d;
+  --gold-light: #ffd700;
+  --red: #ff6b6b;
+}
+html.high-contrast body::before { opacity: 0.08; }
 
 /* ═══════════════════════════════════════════════════════════
    THEME TOGGLE BUTTON — Artisan Islamic Icon

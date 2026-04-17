@@ -21,7 +21,6 @@ const SHELL_ASSETS = [
   './translations/en.js',
   './translations/bn.js',
   './manifest.json',
-  'https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap',
 ];
 const DATA_ASSETS = [
   './data/rates.json',
@@ -65,18 +64,9 @@ self.addEventListener('activate', event => {
    FETCH — routing strategies
    ════════════════════════════════════════ */
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
   // Data files: network-first, queue for background sync on failure
   if (DATA_ASSETS.some(p => event.request.url.includes(p.replace('./', '')))) {
     event.respondWith(networkFirstWithBGSync(event.request));
-    return;
-  }
-
-  // Google Fonts & external CDN: stale-while-revalidate
-  if (url.hostname.includes('fonts.googleapis.com') ||
-      url.hostname.includes('fonts.gstatic.com')) {
-    event.respondWith(staleWhileRevalidate(event.request, CACHE_NAME));
     return;
   }
 

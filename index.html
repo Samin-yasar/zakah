@@ -33,9 +33,6 @@
 <meta property="og:description" content="Calculate your Zakah accurately with live metal prices and multi-currency support." />
 <meta property="og:type"        content="website" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap" />
 <link rel="stylesheet" href="styles.css" />
 
 <!-- Anchor offset so fixed header doesn't obscure targets -->
@@ -185,6 +182,9 @@
       <button class="btn-icon-header" id="shareBtn" onclick="openShareModal()" title="Share">
         ↑
       </button>
+      <button class="btn-icon-header" id="contrastToggleBtn" onclick="toggleHighContrast()" title="High contrast" aria-label="Toggle high contrast">
+        ◐
+      </button>
     </div>
   </div>
 </header>
@@ -213,6 +213,17 @@
   <!-- PROGRESS -->
   <div class="progress-bar fade-up">
     <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div class="wizard-card fade-up" aria-label="Guided flow">
+    <div class="wizard-head">
+      <strong>Guided Steps</strong>
+      <span id="wizardStepLabel">Step 1 of 6</span>
+    </div>
+    <div class="wizard-controls">
+      <button class="btn-reset wizard-btn" type="button" onclick="prevStep()">← Previous</button>
+      <button class="btn-pdf wizard-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
   </div>
 
   <!-- SETTINGS -->
@@ -321,6 +332,76 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <a class="section-anchor" id="privacy-tools"></a>
+  <div class="settings-card fade-up">
+    <div class="settings-card-title">🔐 <span>Privacy, Storage & Reliability</span></div>
+    <div class="privacy-grid">
+      <div class="privacy-mode-toggle">
+        <div>
+          <strong>Privacy Mode</strong>
+          <p>Default ON. Disables all localStorage writes for session-only usage.</p>
+        </div>
+        <button id="privacyModeBtn" class="pill-chip active" type="button" onclick="togglePrivacyMode()">ON</button>
+      </div>
+      <div class="privacy-mode-status" id="privacyModeStatus" role="status" aria-live="polite">Privacy mode is ON — local persistence is disabled.</div>
+      <div class="profile-row">
+        <select id="profileSelect" class="field-select" aria-label="Select profile"></select>
+        <button class="btn-reset" type="button" onclick="createProfile()">New Profile</button>
+        <button class="btn-reset" type="button" onclick="saveCurrentProfile()">Save Profile</button>
+        <button class="btn-reset" type="button" onclick="deleteProfile()">Delete</button>
+      </div>
+      <div class="backup-row">
+        <input type="password" id="backupPassphrase" class="field-select" placeholder="Backup passphrase" autocomplete="new-password" />
+        <button class="btn-reset" type="button" onclick="exportEncryptedBackup()">Export Encrypted Backup</button>
+        <label class="btn-reset file-btn" for="backupImportFile">Import Encrypted Backup</label>
+        <input id="backupImportFile" type="file" accept=".json,application/json" onchange="importEncryptedBackup(event)" />
+      </div>
+      <div class="reminder-row">
+        <input type="date" id="zakahDueDate" class="field-select" />
+        <select id="reminderCalendar" class="field-select">
+          <option value="solar">Solar annual reminder</option>
+          <option value="lunar">Hijri-mode annual reminder (354 days)</option>
+        </select>
+        <button class="btn-reset" type="button" onclick="saveReminder()">Save Reminder</button>
+        <button class="btn-reset" type="button" onclick="requestReminderPermission()">Enable Notification</button>
+      </div>
+      <div class="network-status-row">
+        <span class="badge-small" id="trustBadge">🔒 Local-only / No analytics / No server</span>
+        <span class="badge-small" id="networkBadge">🌐 Network: online</span>
+        <span class="badge-small" id="networkCountBadge">📡 Requests: 0</span>
+      </div>
+      <div class="stale-status" id="staleStatus">Rates status: checking…</div>
+      <details class="explain-panel">
+        <summary>Why this number?</summary>
+        <div id="explainContent">Run a calculation to view formula traces and assumptions.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Scenario comparison</summary>
+        <div id="scenarioCompare">Run a calculation to compare silver/gold and lunar/solar scenarios.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Smart helper prompts</summary>
+        <div id="smartHints">No hints yet.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Data footprint dashboard</summary>
+        <div id="dataFootprint">No local keys found.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Release integrity</summary>
+        <div id="integrityPanel">Version: pending · Hash: pending</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Private support report</summary>
+        <div class="support-panel">
+          <p>Report templates exclude financial values by default. Review before sharing.</p>
+          <textarea id="supportTemplate" rows="6" class="field-select" readonly></textarea>
+          <button class="btn-reset" type="button" onclick="copySupportTemplate()">Copy Report Template</button>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -769,11 +850,34 @@
 <script src="pdf-export.js"></script>
 
 <script>
+const APP_VERSION = '2026.04.17-zk1';
+const PRIVACY_MODE_DEFAULT = true;
+let privacyMode = PRIVACY_MODE_DEFAULT;
+let networkRequestCount = 0;
+
+function lsGet(key, fallback = null) {
+  if (privacyMode) return fallback;
+  try {
+    const val = localStorage.getItem(key);
+    return val === null ? fallback : val;
+  } catch (_) {
+    return fallback;
+  }
+}
+function lsSet(key, value) {
+  if (privacyMode) return false;
+  try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+}
+function lsRemove(key) {
+  if (privacyMode) return false;
+  try { localStorage.removeItem(key); return true; } catch (_) { return false; }
+}
+
 /* ════════════════════════════════════════
    THEME TOGGLE — Artisan Islamic Icon
    ════════════════════════════════════════ */
 (function initTheme() {
-  const saved = localStorage.getItem('zakat_theme');
+  const saved = lsGet('zakat_theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isLight = saved ? saved === 'light' : !prefersDark;
   if (isLight) document.documentElement.classList.add('light-theme');
@@ -789,7 +893,7 @@ function toggleTheme() {
   btn.classList.add('spinning', 'ripple');
   setTimeout(() => btn.classList.remove('spinning', 'ripple'), 600);
 
-  localStorage.setItem('zakat_theme', isLight ? 'light' : 'dark');
+  lsSet('zakat_theme', isLight ? 'light' : 'dark');
   updateThemeTooltip(isLight);
 }
 
@@ -801,7 +905,7 @@ function updateThemeTooltip(isLight) {
 /* ════════════════════════════════════════
    LANGUAGE LOADER
    ════════════════════════════════════════ */
-let currentLang = localStorage.getItem('zakat_lang') || 'en';
+let currentLang = lsGet('zakat_lang', 'en') || 'en';
 let L = {};
 
 function loadLang(lang, callback) {
@@ -847,7 +951,7 @@ function applyLang(lang) {
 
 function setLang(lang) {
   currentLang = lang;
-  localStorage.setItem('zakat_lang', lang);
+  lsSet('zakat_lang', lang);
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-bn').classList.toggle('active', lang === 'bn');
   loadLang(lang, () => { applyLang(lang); calc(); });
@@ -866,7 +970,7 @@ const RATES_URL  = './data/rates.json';
 /* ════════════════════════════════════════
    STATE
    ════════════════════════════════════════ */
-let currentCurrency    = localStorage.getItem('zakat_currency') || 'BDT';
+let currentCurrency    = lsGet('zakat_currency', 'BDT') || 'BDT';
 let nisabType          = 'silver';
 let calendarType       = 'lunar';
 let stockMethod        = 'trade';
@@ -874,16 +978,38 @@ let liveGoldUsdPerOz   = 0;
 let liveSilverUsdPerOz = 0;
 let fxRates            = {};
 let pricesLive         = false;
+let ratesTimestampMs   = 0;
+let trustedRatesSource = 'none';
+let profiles = {};
+let activeProfile = 'default';
+let reminderConfig = null;
+
+const FIELD_IDS = [
+  'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
+  'f_bkash','f_nagad','f_upay','f_cellfin','f_rocket','f_paypal','f_othersWallet',
+  'f_moneyLent','f_salaryDue',
+  'f_gold24k','f_gold22k','f_gold18k','f_gold21k','f_goldCoins',
+  'f_silverGrams','f_silverBullion',
+  'f_dseStocks','f_intlStocks','f_mutualFunds','f_btc','f_eth','f_otherCrypto',
+  'f_gpf','f_nsc','f_bonds','f_otherInvest',
+  'f_bizCash','f_bizBank','f_pettyCash',
+  'f_finishedGoods','f_rawMaterials','f_wip','f_tradeGoods',
+  'f_tradeRec','f_advancePaid','f_secDeposit',
+  'f_personalLoan','f_creditCard','f_mortgage12','f_rentBills','f_taxesDue',
+  'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
+];
+const STEPS = ['settings','cash','metals','investments','business','liabilities','results'];
+let currentStep = 0;
 
 /* ════════════════════════════════════════
    CACHE HELPERS
    ════════════════════════════════════════ */
 function cacheWrite(key, data) {
-  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+  lsSet(key, JSON.stringify({ ts: Date.now(), data }));
 }
 function cacheRead(key) {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = lsGet(key);
     if (!raw) return null;
     const obj = JSON.parse(raw);
     if (Date.now() - obj.ts > CACHE_TTL_MS) return null;
@@ -945,18 +1071,22 @@ async function fetchPrices(isManualRefresh = false) {
     if (!metalsOk) throw new Error('Metal prices unavailable');
 
     cacheWrite('zakat_fx', fxRates);
+    cacheWrite('zakat_metals', { gold: liveGoldUsdPerOz, silver: liveSilverUsdPerOz });
+    ratesTimestampMs = Date.now();
+    trustedRatesSource = 'live';
     pricesLive = true;
     onPricesReady('live');
 
   } catch (err) {
     console.warn('Price fetch failed:', err.message);
-    const staleMetal = (() => { try { const r = localStorage.getItem('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
-    const staleFx    = (() => { try { const r = localStorage.getItem('zakat_fx');     return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    const staleMetal = (() => { try { const r = lsGet('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    const staleFx    = (() => { try { const r = lsGet('zakat_fx');     return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
     if (staleMetal && staleFx) {
       liveGoldUsdPerOz   = staleMetal.gold;
       liveSilverUsdPerOz = staleMetal.silver;
       fxRates            = staleFx;
       pricesLive         = true;
+      trustedRatesSource = 'stale';
       onPricesReady('stale');
     } else {
       dot.className  = 'live-dot error';
@@ -978,6 +1108,8 @@ function onPricesReady(source) {
   const now = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
   const srcLabel = source === 'cache' ? ' (cached)' : source === 'stale' ? ' (stale cache)' : '';
   ts.textContent = `${L.price_updated || 'Updated'}: ${now}${srcLabel}`;
+  ratesTimestampMs = Date.now();
+  trustedRatesSource = source;
   btn.disabled   = false;
   btn.classList.remove('spinning');
   setShimmer(false);
@@ -1066,7 +1198,7 @@ function updateFxBanner() {
    ════════════════════════════════════════ */
 function setCurrency(cur) {
   currentCurrency = cur;
-  localStorage.setItem('zakat_currency', cur);
+  lsSet('zakat_currency', cur);
   updateCurrencySymbols();
   updatePriceDisplay();
   updateFxBanner();
@@ -1112,6 +1244,362 @@ function selectRadio(group, val, labelEl) {
 function toggleSection(id) {
   document.getElementById(id).classList.toggle('open');
 }
+
+function toggleHighContrast() {
+  const on = document.documentElement.classList.toggle('high-contrast');
+  lsSet('zakat_contrast', on ? 'on' : 'off');
+}
+
+function updatePrivacyUi() {
+  const btn = document.getElementById('privacyModeBtn');
+  const status = document.getElementById('privacyModeStatus');
+  if (!btn || !status) return;
+  btn.classList.toggle('active', privacyMode);
+  btn.textContent = privacyMode ? 'ON' : 'OFF';
+  status.textContent = privacyMode
+    ? 'Privacy mode is ON — local persistence is disabled.'
+    : 'Privacy mode is OFF — local-only persistence is enabled.';
+}
+
+function togglePrivacyMode() {
+  privacyMode = !privacyMode;
+  updatePrivacyUi();
+  if (privacyMode) {
+    updateDataFootprint();
+    return;
+  }
+  persistState();
+}
+
+function collectFormData() {
+  const payload = {};
+  FIELD_IDS.forEach(id => {
+    const val = v(id);
+    if (val > 0) payload[id] = val;
+  });
+  payload.nisabType = nisabType;
+  payload.calendarType = calendarType;
+  payload.stockMethod = stockMethod;
+  payload.currency = currentCurrency;
+  return payload;
+}
+
+function applyFormData(data = {}) {
+  FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = data[id] || 0;
+  });
+  const cur = data.currency || currentCurrency;
+  document.getElementById('currencySelect').value = cur;
+  setCurrency(cur);
+  setNisabType(data.nisabType || 'silver');
+  setCalendar(data.calendarType || 'lunar');
+  const target = data.stockMethod || 'trade';
+  const lbl = document.querySelector(`#stockMethodGroup .radio-btn input[value="${target}"]`)?.closest('.radio-btn');
+  if (lbl) selectRadio('stockMethod', target, lbl);
+}
+
+function persistState() {
+  if (privacyMode) return;
+  lsSet('zakat_form_data', JSON.stringify({ ts: Date.now(), data: collectFormData() }));
+  lsSet('zakat_profiles', JSON.stringify(profiles));
+  lsSet('zakat_active_profile', activeProfile);
+  if (reminderConfig) lsSet('zakat_reminder', JSON.stringify(reminderConfig));
+  updateDataFootprint();
+}
+
+function restoreState() {
+  const saved = lsGet('zakat_form_data');
+  if (saved) {
+    try { applyFormData(JSON.parse(saved).data || {}); } catch (_) {}
+  }
+}
+
+function loadProfiles() {
+  try { profiles = JSON.parse(lsGet('zakat_profiles', '{}')) || {}; } catch (_) { profiles = {}; }
+  if (!profiles.default) profiles.default = { name: 'default', data: {} };
+  activeProfile = lsGet('zakat_active_profile', 'default') || 'default';
+  renderProfiles();
+}
+
+function renderProfiles() {
+  const sel = document.getElementById('profileSelect');
+  if (!sel) return;
+  sel.innerHTML = Object.keys(profiles).map(k => `<option value="${k}">${profiles[k].name || k}</option>`).join('');
+  sel.value = profiles[activeProfile] ? activeProfile : 'default';
+  sel.onchange = () => {
+    activeProfile = sel.value;
+    if (profiles[activeProfile]?.data) applyFormData(profiles[activeProfile].data);
+    persistState();
+    calc();
+  };
+}
+
+function createProfile() {
+  const name = prompt('New profile name (local only):');
+  if (!name) return;
+  const id = `profile_${Date.now()}`;
+  profiles[id] = { name: name.trim(), data: collectFormData() };
+  activeProfile = id;
+  renderProfiles();
+  persistState();
+}
+
+function saveCurrentProfile() {
+  if (!profiles[activeProfile]) profiles[activeProfile] = { name: activeProfile, data: {} };
+  profiles[activeProfile].data = collectFormData();
+  persistState();
+  calc();
+}
+
+function deleteProfile() {
+  if (activeProfile === 'default') return;
+  delete profiles[activeProfile];
+  activeProfile = 'default';
+  renderProfiles();
+  if (profiles.default?.data) applyFormData(profiles.default.data);
+  persistState();
+  calc();
+}
+
+async function deriveBackupKey(passphrase, salt) {
+  const enc = new TextEncoder();
+  const material = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function exportEncryptedBackup() {
+  const passphrase = document.getElementById('backupPassphrase')?.value || '';
+  if (!passphrase) return alert('Enter a backup passphrase.');
+  const payload = {
+    version: APP_VERSION,
+    createdAt: new Date().toISOString(),
+    data: { form: collectFormData(), profiles, reminderConfig, currency: currentCurrency }
+  };
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveBackupKey(passphrase, salt);
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(payload)));
+  const out = {
+    kdf: 'PBKDF2-SHA256',
+    alg: 'AES-GCM-256',
+    salt: btoa(String.fromCharCode(...salt)),
+    iv: btoa(String.fromCharCode(...iv)),
+    ct: btoa(String.fromCharCode(...new Uint8Array(cipher)))
+  };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `zakah-backup-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function importEncryptedBackup(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const passphrase = document.getElementById('backupPassphrase')?.value || '';
+  if (!passphrase) return alert('Enter backup passphrase first.');
+  try {
+    const raw = JSON.parse(await file.text());
+    const salt = Uint8Array.from(atob(raw.salt), c => c.charCodeAt(0));
+    const iv = Uint8Array.from(atob(raw.iv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(raw.ct), c => c.charCodeAt(0));
+    const key = await deriveBackupKey(passphrase, salt);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+    const data = JSON.parse(new TextDecoder().decode(plain));
+    if (data?.data?.form) applyFormData(data.data.form);
+    profiles = data?.data?.profiles || profiles;
+    reminderConfig = data?.data?.reminderConfig || reminderConfig;
+    renderProfiles();
+    persistState();
+    calc();
+  } catch (_) {
+    alert('Backup import failed. Check passphrase or file.');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function requestReminderPermission() {
+  if (!('Notification' in window)) return alert('Notifications are not supported in this browser.');
+  Notification.requestPermission();
+}
+
+function computeNextReminderDate(baseDate, mode) {
+  if (!baseDate) return null;
+  const d = new Date(baseDate + 'T00:00:00');
+  const next = new Date(d);
+  next.setDate(next.getDate() + (mode === 'lunar' ? 354 : 365));
+  return next;
+}
+
+function saveReminder() {
+  const dateVal = document.getElementById('zakahDueDate')?.value;
+  const mode = document.getElementById('reminderCalendar')?.value || 'solar';
+  if (!dateVal) return;
+  reminderConfig = { date: dateVal, mode, savedAt: Date.now() };
+  persistState();
+  checkReminderNow();
+}
+
+function checkReminderNow() {
+  if (!reminderConfig || !('Notification' in window)) return;
+  const next = computeNextReminderDate(reminderConfig.date, reminderConfig.mode);
+  if (!next) return;
+  const diff = next.getTime() - Date.now();
+  if (diff <= 24 * 60 * 60 * 1000 && Notification.permission === 'granted') {
+    new Notification('Zakah Reminder', { body: `Zakah due reminder (${reminderConfig.mode === 'lunar' ? 'Hijri mode' : 'Solar mode'}) is near.` });
+  }
+}
+
+function deleteStorageKey(key) {
+  lsRemove(key);
+  updateDataFootprint();
+}
+
+function updateDataFootprint() {
+  const panel = document.getElementById('dataFootprint');
+  if (!panel) return;
+  if (privacyMode) {
+    panel.textContent = 'Privacy mode ON: localStorage writes disabled.';
+    return;
+  }
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('zakat_') || k === 'pwa_dismissed');
+  if (!keys.length) {
+    panel.textContent = 'No local keys found.';
+    return;
+  }
+  panel.innerHTML = keys.map(k => {
+    const val = localStorage.getItem(k) || '';
+    const size = new Blob([val]).size;
+    return `<div class="footprint-item"><span>${k}</span><span>${size} bytes</span><button class="btn-reset tiny" type="button" onclick="deleteStorageKey('${k}')">Delete</button></div>`;
+  }).join('');
+}
+
+function updateWizardLabel() {
+  const el = document.getElementById('wizardStepLabel');
+  if (el) el.textContent = `Step ${Math.min(currentStep + 1, STEPS.length)} of ${STEPS.length}`;
+}
+
+function goStep(index) {
+  currentStep = Math.max(0, Math.min(STEPS.length - 1, index));
+  navigateToHash(`#${STEPS[currentStep]}`);
+  updateWizardLabel();
+}
+function nextStep() { goStep(currentStep + 1); }
+function prevStep() { goStep(currentStep - 1); }
+
+function updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, investTotal, bizTotal }) {
+  const hints = [];
+  if (totalAssets > 0 && liabTotal === 0) hints.push('You entered assets but no liabilities due within 12 months. Confirm deductions.');
+  if (cashTotal > 0 && v('f_bankFD') > 0) hints.push('Ensure accrued bank interest (Riba) is excluded.');
+  if (investTotal > 0 && stockMethod === 'trade' && (v('f_dseStocks') + v('f_intlStocks')) > 0) hints.push('If stocks are long-term holdings, consider the 25% proxy method.');
+  if (metalTotal === 0 && (v('f_gold24k') + v('f_silverGrams')) === 0) hints.push('If you own gold/silver, include only zakatable holdings.');
+  if (bizTotal > 0 && v('f_tradePayables') === 0) hints.push('Business assets entered with zero trade payables — verify short-term liabilities.');
+  document.getElementById('smartHints').innerHTML = hints.length ? `<ul>${hints.map(h => `<li>${h}</li>`).join('')}</ul>` : 'No critical omissions detected.';
+}
+
+function updateExplainability({ totalAssets, liabTotal, netWealth, nisabValue, zakahRate, zakahDue }) {
+  document.getElementById('explainContent').innerHTML = `
+    <p><strong>Formula:</strong> Net Zakatable Wealth = Total Assets − Eligible Liabilities</p>
+    <p><strong>Values:</strong> ${fmt(totalAssets)} − ${fmt(liabTotal)} = ${fmt(netWealth)}</p>
+    <p><strong>Nisab Check:</strong> ${fmt(netWealth)} ${netWealth >= nisabValue ? '≥' : '<'} ${fmt(nisabValue)}</p>
+    <p><strong>Zakah:</strong> ${fmt(netWealth)} × ${(zakahRate * 100).toFixed(3)}% = ${fmt(zakahDue)}</p>
+    <p><strong>Assumptions:</strong> Only liabilities due within 12 months are deducted, and all calculations stay on-device.</p>
+  `;
+}
+
+function updateScenarioComparison(netWealth, silverPerGram, goldPerGram) {
+  const silverN = 612.36 * silverPerGram;
+  const goldN = 87.48 * goldPerGram;
+  const sLunar = netWealth >= silverN ? netWealth * 0.025 : 0;
+  const sSolar = netWealth >= silverN ? netWealth * 0.02577 : 0;
+  const gLunar = netWealth >= goldN ? netWealth * 0.025 : 0;
+  const gSolar = netWealth >= goldN ? netWealth * 0.02577 : 0;
+  document.getElementById('scenarioCompare').innerHTML = `
+    <div>Silver + Lunar: <strong>${fmt(sLunar)}</strong></div>
+    <div>Silver + Solar: <strong>${fmt(sSolar)}</strong></div>
+    <div>Gold + Lunar: <strong>${fmt(gLunar)}</strong></div>
+    <div>Gold + Solar: <strong>${fmt(gSolar)}</strong></div>
+  `;
+}
+
+function updateStaleStatus() {
+  const el = document.getElementById('staleStatus');
+  if (!el) return;
+  const ageH = ratesTimestampMs ? ((Date.now() - ratesTimestampMs) / 3600000) : null;
+  const stale = ageH !== null && ageH > 24;
+  const src = trustedRatesSource === 'stale' ? 'stale cache' : trustedRatesSource;
+  el.textContent = !ratesTimestampMs
+    ? 'Rates status: waiting for first successful fetch.'
+    : `Rates status: ${stale ? 'STALE' : 'fresh'} · source: ${src} · age: ${ageH.toFixed(1)}h`;
+}
+
+function updateNetworkBadge() {
+  const online = navigator.onLine;
+  const badge = document.getElementById('networkBadge');
+  const count = document.getElementById('networkCountBadge');
+  if (badge) badge.textContent = `🌐 Network: ${online ? 'online' : 'offline'}`;
+  if (count) count.textContent = `📡 Requests: ${networkRequestCount}`;
+}
+
+function buildSupportTemplate() {
+  const text = [
+    'Issue report (privacy-preserving)',
+    `App version: ${APP_VERSION}`,
+    `Browser: ${navigator.userAgent}`,
+    `Language: ${currentLang}`,
+    `Currency: ${currentCurrency}`,
+    `Nisab: ${nisabType}, Calendar: ${calendarType}, Stock method: ${stockMethod}`,
+    'Financial input values: [REDACTED]',
+    'Issue details:',
+    '- What happened?',
+    '- Expected behavior?',
+    '- Steps to reproduce?'
+  ].join('\n');
+  const el = document.getElementById('supportTemplate');
+  if (el) el.value = text;
+}
+
+function copySupportTemplate() {
+  const text = document.getElementById('supportTemplate')?.value || '';
+  if (!text) return;
+  navigator.clipboard?.writeText(text).catch(() => {});
+}
+
+async function updateIntegrityPanel() {
+  const out = document.getElementById('integrityPanel');
+  if (!out || !window.crypto?.subtle) return;
+  try {
+    const [a, b] = await Promise.all([
+      fetch('./index.html', { cache: 'no-store' }).then(r => r.text()),
+      fetch('./styles.css', { cache: 'no-store' }).then(r => r.text())
+    ]);
+    const bytes = new TextEncoder().encode(`${a}\n${b}\n${APP_VERSION}`);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const hex = Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
+    out.textContent = `Version: ${APP_VERSION} · SHA-256: ${hex.slice(0, 24)}…`;
+  } catch (_) {
+    out.textContent = `Version: ${APP_VERSION} · Hash unavailable`;
+  }
+}
+
+/* intercept network requests for trust-by-design indicator */
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  networkRequestCount += 1;
+  updateNetworkBadge();
+  return _nativeFetch(...args);
+};
 
 /* ════════════════════════════════════════
    MAIN CALCULATION
@@ -1188,23 +1676,9 @@ function calc() {
   const isEligible = nisabValue > 0 && netWealth >= nisabValue;
   const zakahDue   = isEligible ? netWealth * zakahRate : 0;
 
-  const fieldIds = [
-    'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
-    'f_bkash','f_nagad','f_upay','f_cellfin','f_rocket','f_paypal','f_othersWallet',
-    'f_moneyLent','f_salaryDue',
-    'f_gold24k','f_gold22k','f_gold18k','f_gold21k','f_goldCoins',
-    'f_silverGrams','f_silverBullion',
-    'f_dseStocks','f_intlStocks','f_mutualFunds','f_btc','f_eth','f_otherCrypto',
-    'f_gpf','f_nsc','f_bonds','f_otherInvest',
-    'f_bizCash','f_bizBank','f_pettyCash',
-    'f_finishedGoods','f_rawMaterials','f_wip','f_tradeGoods',
-    'f_tradeRec','f_advancePaid','f_secDeposit',
-    'f_personalLoan','f_creditCard','f_mortgage12','f_rentBills','f_taxesDue',
-    'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
-  ];
-  const filledCount = fieldIds.filter(id => v(id) > 0).length;
+  const filledCount = FIELD_IDS.filter(id => v(id) > 0).length;
   document.getElementById('progressFill').style.width =
-    Math.min(100, Math.round(filledCount / fieldIds.length * 100)) + '%';
+    Math.min(100, Math.round(filledCount / FIELD_IDS.length * 100)) + '%';
 
   document.getElementById('tot-cash').textContent   = fmt(cashTotal);
   document.getElementById('tot-metals').textContent = fmt(metalTotal);
@@ -1237,6 +1711,13 @@ function calc() {
   document.getElementById('bd_liab').textContent   = fmt(liabTotal);
   document.getElementById('bd_net').textContent    = fmt(netWealth);
   document.getElementById('bd_zakah').textContent  = fmt(zakahDue);
+
+  updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, investTotal, bizTotal });
+  updateExplainability({ totalAssets, liabTotal, netWealth, nisabValue, zakahRate, zakahDue });
+  updateScenarioComparison(netWealth, silverPerGram, goldPerGram);
+  updateStaleStatus();
+  buildSupportTemplate();
+  persistState();
 }
 
 /* ════════════════════════════════════════
@@ -1244,6 +1725,9 @@ function calc() {
    ════════════════════════════════════════ */
 function resetAll() {
   document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = 0);
+  lsRemove('zakat_form_data');
+  if (profiles[activeProfile]) profiles[activeProfile].data = {};
+  persistState();
   calc();
 }
 
@@ -1435,7 +1919,7 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      navigator.standalone === true;
 
 function wasDismissed() {
-  const ts = parseInt(localStorage.getItem('pwa_dismissed') || '0', 10);
+  const ts = parseInt(lsGet('pwa_dismissed', '0') || '0', 10);
   return ts && (Date.now() - ts) < 30 * 24 * 60 * 60 * 1000;
 }
 function showBanner() { if (isStandalone || wasDismissed()) return; banner.hidden = false; if (isIos) iosHint.hidden = false; }
@@ -1450,7 +1934,7 @@ btnInstall?.addEventListener('click', async () => {
     deferredPrompt = null;
   }
 });
-btnDismiss?.addEventListener('click', () => { localStorage.setItem('pwa_dismissed', String(Date.now())); hideBanner(); });
+btnDismiss?.addEventListener('click', () => { lsSet('pwa_dismissed', String(Date.now())); hideBanner(); });
 if (isIos && !isStandalone) { setTimeout(showBanner, 3500); if (btnInstall) btnInstall.hidden = true; }
 window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = null; });
 
@@ -1458,15 +1942,38 @@ window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = n
    INIT
    ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  const savedCur = localStorage.getItem('zakat_currency') || 'BDT';
+  const savedCur = lsGet('zakat_currency', 'BDT') || 'BDT';
   document.getElementById('currencySelect').value = savedCur;
   currentCurrency = savedCur;
   updateCurrencySymbols();
+  updateNetworkBadge();
+  updatePrivacyUi();
+  if (lsGet('zakat_contrast') === 'on') document.documentElement.classList.add('high-contrast');
+  try { reminderConfig = JSON.parse(lsGet('zakat_reminder', 'null')); } catch (_) { reminderConfig = null; }
+  if (reminderConfig?.date) {
+    const due = document.getElementById('zakahDueDate');
+    const mode = document.getElementById('reminderCalendar');
+    if (due) due.value = reminderConfig.date;
+    if (mode) mode.value = reminderConfig.mode || 'solar';
+  }
+  loadProfiles();
+  restoreState();
 
   document.getElementById('footerYear').textContent = new Date().getFullYear();
 
   document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
   document.getElementById('btn-bn').classList.toggle('active', currentLang === 'bn');
+  document.querySelectorAll('.result-stat-value').forEach(el => {
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+  });
+
+  window.addEventListener('online', updateNetworkBadge);
+  window.addEventListener('offline', updateNetworkBadge);
+  setInterval(() => { updateStaleStatus(); checkReminderNow(); }, 60000);
+  updateDataFootprint();
+  updateIntegrityPanel();
+  updateWizardLabel();
 
   loadLang(currentLang, () => {
     applyLang(currentLang);
