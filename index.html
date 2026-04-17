@@ -33,9 +33,6 @@
 <meta property="og:description" content="Calculate your Zakah accurately with live metal prices and multi-currency support." />
 <meta property="og:type"        content="website" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Noto+Serif+Bengali:wght@300;400;500;600;700&display=swap" />
 <link rel="stylesheet" href="styles.css" />
 
 <script src="./libs/jspdf.umd.min.js" defer></script>
@@ -174,6 +171,9 @@
       <button class="btn-icon-header" id="shareBtn" onclick="openShareModal()" title="Share">
         ↑
       </button>
+      <button class="btn-icon-header" id="contrastToggleBtn" onclick="toggleHighContrast()" title="High contrast" aria-label="Toggle high contrast">
+        ◐
+      </button>
     </div>
   </div>
 </header>
@@ -202,6 +202,17 @@
   <!-- PROGRESS -->
     <div class="progress-bar fade-up">
       <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+
+  <div class="wizard-card fade-up" aria-label="Guided flow">
+    <div class="wizard-head">
+      <strong>Guided Steps</strong>
+      <span id="wizardStepLabel">Step 1 of 7</span>
+    </div>
+    <div class="wizard-controls">
+      <button class="btn-reset wizard-btn" type="button" onclick="prevStep()">← Previous</button>
+      <button class="btn-pdf wizard-btn" type="button" onclick="nextStep()">Next →</button>
+    </div>
   </div>
 
   <!-- SETTINGS -->
@@ -310,6 +321,76 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <a class="section-anchor" id="privacy-tools"></a>
+  <div class="settings-card fade-up">
+    <div class="settings-card-title">🔐 <span>Privacy, Storage & Reliability</span></div>
+    <div class="privacy-grid">
+      <div class="privacy-mode-toggle">
+        <div>
+          <strong>Privacy Mode</strong>
+          <p>Default ON. Disables all localStorage writes for session-only usage.</p>
+        </div>
+        <button id="privacyModeBtn" class="pill-chip active" type="button" onclick="togglePrivacyMode()">ON</button>
+      </div>
+      <div class="privacy-mode-status" id="privacyModeStatus" role="status" aria-live="polite">Privacy mode is ON — local persistence is disabled.</div>
+      <div class="profile-row">
+        <select id="profileSelect" class="field-select" aria-label="Select profile"></select>
+        <button class="btn-reset" type="button" onclick="createProfile()">New Profile</button>
+        <button class="btn-reset" type="button" onclick="saveCurrentProfile()">Save Profile</button>
+        <button class="btn-reset" type="button" onclick="deleteProfile()">Delete</button>
+      </div>
+      <div class="backup-row">
+        <input type="password" id="backupPassphrase" class="field-select" placeholder="Backup passphrase" autocomplete="new-password" />
+        <button class="btn-reset" type="button" onclick="exportEncryptedBackup()">Export Encrypted Backup</button>
+        <label class="btn-reset file-btn" for="backupImportFile">Import Encrypted Backup</label>
+        <input id="backupImportFile" type="file" accept=".json,application/json" onchange="importEncryptedBackup(event)" />
+      </div>
+      <div class="reminder-row">
+        <input type="date" id="zakahDueDate" class="field-select" />
+        <select id="reminderCalendar" class="field-select">
+          <option value="solar">Solar annual reminder</option>
+          <option value="lunar">Hijri-mode annual reminder (354 days)</option>
+        </select>
+        <button class="btn-reset" type="button" onclick="saveReminder()">Save Reminder</button>
+        <button class="btn-reset" type="button" onclick="requestReminderPermission()">Enable Notification</button>
+      </div>
+      <div class="network-status-row">
+        <span class="badge-small" id="trustBadge">🔒 Local-only / No analytics / No server</span>
+        <span class="badge-small" id="networkBadge">🌐 Network: online</span>
+        <span class="badge-small" id="networkCountBadge">📡 Requests: 0</span>
+      </div>
+      <div class="stale-status" id="staleStatus">Rates status: checking…</div>
+      <details class="explain-panel">
+        <summary>Why this number?</summary>
+        <div id="explainContent">Run a calculation to view formula traces and assumptions.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Scenario comparison</summary>
+        <div id="scenarioCompare">Run a calculation to compare silver/gold and lunar/solar scenarios.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Smart helper prompts</summary>
+        <div id="smartHints">No hints yet.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Data footprint dashboard</summary>
+        <div id="dataFootprint">No local keys found.</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Release integrity</summary>
+        <div id="integrityPanel">Version: pending · Hash: pending</div>
+      </details>
+      <details class="explain-panel">
+        <summary>Private support report</summary>
+        <div class="support-panel">
+          <p>Report templates exclude financial values by default. Review before sharing.</p>
+          <textarea id="supportTemplate" rows="6" class="field-select" readonly></textarea>
+          <button class="btn-reset" type="button" onclick="copySupportTemplate()">Copy Report Template</button>
+        </div>
+      </details>
     </div>
   </div>
 

@@ -1,8 +1,39 @@
+const APP_VERSION = '2026.04.17-zk1';
+const PRIVACY_MODE_DEFAULT = true;
+let privacyMode = PRIVACY_MODE_DEFAULT;
+let networkRequestCount = 0;
+
+function lsGet(key, fallback = null) {
+  if (privacyMode) return fallback;
+  try {
+    const val = localStorage.getItem(key);
+    return val === null ? fallback : val;
+  } catch (_) {
+    return fallback;
+  }
+}
+function lsSet(key, value) {
+  if (privacyMode) return false;
+  try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+}
+function lsRemove(key) {
+  if (privacyMode) return false;
+  try { localStorage.removeItem(key); return true; } catch (_) { return false; }
+}
+function escapeHtml(str = '') {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 /* ════════════════════════════════════════
    THEME TOGGLE — Artisan Islamic Icon
    ════════════════════════════════════════ */
 (function initTheme() {
-  const saved = localStorage.getItem('zakat_theme');
+  const saved = lsGet('zakat_theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isLight = saved ? saved === 'light' : !prefersDark;
   if (isLight) document.documentElement.classList.add('light-theme');
@@ -18,7 +49,7 @@ function toggleTheme() {
   btn.classList.add('spinning', 'ripple');
   setTimeout(() => btn.classList.remove('spinning', 'ripple'), 600);
 
-  localStorage.setItem('zakat_theme', isLight ? 'light' : 'dark');
+  lsSet('zakat_theme', isLight ? 'light' : 'dark');
   updateThemeTooltip(isLight);
 }
 
@@ -30,7 +61,7 @@ function updateThemeTooltip(isLight) {
 /* ════════════════════════════════════════
    LANGUAGE LOADER
    ════════════════════════════════════════ */
-let currentLang = localStorage.getItem('zakat_lang') || 'en';
+let currentLang = lsGet('zakat_lang', 'en') || 'en';
 let L = {};
 
 function loadLang(lang, callback) {
@@ -67,7 +98,6 @@ function applyLang(lang) {
     const key = el.getAttribute('data-tip-key');
     if (L[key] !== undefined) el.setAttribute('data-tip', L[key]);
   });
-  refreshFieldTooltipMetadata();
 
   const nwRaw    = parseFloat(document.getElementById('r_netWealth')?.textContent?.replace(/[^\d.]/g,'') || '0');
   const nisabRaw = parseFloat(document.getElementById('r_nisabVal')?.textContent?.replace(/[^\d.]/g,'')  || '9999999');
@@ -77,7 +107,7 @@ function applyLang(lang) {
 
 function setLang(lang) {
   currentLang = lang;
-  localStorage.setItem('zakat_lang', lang);
+  lsSet('zakat_lang', lang);
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-bn').classList.toggle('active', lang === 'bn');
   loadLang(lang, () => { applyLang(lang); calc(); });
@@ -89,74 +119,16 @@ function setLang(lang) {
 const TROY_OZ_TO_GRAM = 31.1035;
 const BHORI_TO_GRAM   = 11.6638;
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
-const CACHE_KEYS = { metals: 'zakat_metals', fx: 'zakat_fx' };
-// Explicit 24h TTL for required cache keys.
-const CACHE_TTL_BY_KEY = {
-  [CACHE_KEYS.metals]: CACHE_TTL_MS,
-  [CACHE_KEYS.fx]: CACHE_TTL_MS
-};
+const PERSIST_THROTTLE_MS = 250;
+const DOWNLOAD_REVOKE_DELAY_MS = 1000;
 const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', AED: 'د.إ', GBP:'£', AUD:'A$', INR:'₹', CAD: 'C$', MYR: 'MR', JPY: '¥', IDR: 'RP' };
 const METALS_URL = './data/metals.json';
 const RATES_URL  = './data/rates.json';
-const FIELD_TOOLTIPS = {
-  goldPriceManual: 'Current market price of 24k gold per gram in your selected currency.',
-  silverPriceManual: 'Current market price of 999 silver per gram in your selected currency.',
-  f_cashOnHand: 'Physical cash available with you now.',
-  f_cashForeign: 'Foreign cash converted into your selected currency.',
-  f_bankSavings: 'Savings account balance excluding any interest (Riba).',
-  f_bankCurrent: 'Current/checking account balance excluding interest.',
-  f_bankFD: 'Fixed deposit principal amount only; exclude interest.',
-  f_bkash: 'Current bKash wallet balance.',
-  f_nagad: 'Current Nagad wallet balance.',
-  f_upay: 'Current Upay wallet balance.',
-  f_cellfin: 'Current Cellfin wallet balance.',
-  f_rocket: 'Current Rocket/DBBL wallet balance.',
-  f_paypal: 'Current PayPal/Payoneer balance.',
-  f_othersWallet: 'Any other mobile or digital wallet balances.',
-  f_moneyLent: 'Recoverable money you lent to others.',
-  f_salaryDue: 'Salary or bonus already earned but not yet received.',
-  f_gold24k: 'Weight of 24k gold you own in grams.',
-  f_gold22k: 'Weight of 22k gold you own in grams.',
-  f_gold18k: 'Weight of 18k gold you own in grams.',
-  f_gold21k: 'Weight of 21k gold you own in grams.',
-  f_goldCoins: 'Weight of 24k gold bars/coins in grams.',
-  f_silverGrams: 'Weight of silver you own in grams.',
-  f_silverBullion: 'Weight of silver coins or bullion in grams.',
-  f_dseStocks: 'Current market value of Bangladesh (DSE) stocks.',
-  f_intlStocks: 'Current market value of international stocks.',
-  f_mutualFunds: 'Current market value of mutual funds/ETFs.',
-  f_btc: 'Current market value of your Bitcoin holdings.',
-  f_eth: 'Current market value of your Ethereum holdings.',
-  f_otherCrypto: 'Current market value of all other crypto holdings.',
-  f_gpf: 'Accessible value of GPF/provident fund balance.',
-  f_nsc: 'Principal value of Sanchayapatra/NSC holdings.',
-  f_bonds: 'Current value of bonds or sukuk holdings.',
-  f_otherInvest: 'Other investment schemes not listed above.',
-  f_bizCash: 'Business cash currently in hand.',
-  f_bizBank: 'Business bank balance available now.',
-  f_pettyCash: 'Petty cash or business float kept for daily expenses.',
-  f_finishedGoods: 'Sale value of finished goods inventory.',
-  f_rawMaterials: 'Current sale-equivalent value of raw materials.',
-  f_wip: 'Estimated sale value of work in progress.',
-  f_tradeGoods: 'Sale value of trade goods/merchandise.',
-  f_tradeRec: 'Receivables likely to be collected from customers.',
-  f_advancePaid: 'Supplier advances paid that are recoverable.',
-  f_secDeposit: 'Refundable security deposits paid by you.',
-  f_personalLoan: 'Personal loan installments due within 12 months.',
-  f_creditCard: 'Outstanding payable credit card balance.',
-  f_mortgage12: 'Only the next 12 months of mortgage payments due.',
-  f_rentBills: 'Overdue rent and utility bills currently due.',
-  f_taxesDue: 'Taxes currently payable.',
-  f_bizLoan: 'Business loan dues payable within 12 months.',
-  f_tradePayables: 'Supplier invoices and trade payables due now.',
-  f_salariesPayable: 'Unpaid salaries currently due to staff.',
-  f_advanceReceived: 'Customer advances received for undelivered goods/services.'
-};
 
 /* ════════════════════════════════════════
    STATE
    ════════════════════════════════════════ */
-let currentCurrency    = localStorage.getItem('zakat_currency') || 'BDT';
+let currentCurrency    = lsGet('zakat_currency', 'BDT') || 'BDT';
 let nisabType          = 'silver';
 let calendarType       = 'lunar';
 let stockMethod        = 'trade';
@@ -164,30 +136,42 @@ let liveGoldUsdPerOz   = 0;
 let liveSilverUsdPerOz = 0;
 let fxRates            = {};
 let pricesLive         = false;
+let ratesTimestampMs   = 0;
+let trustedRatesSource = 'none';
+let profiles = {};
+let activeProfile = 'default';
+let reminderConfig = null;
+
+const FIELD_IDS = [
+  'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
+  'f_bkash','f_nagad','f_upay','f_cellfin','f_rocket','f_paypal','f_othersWallet',
+  'f_moneyLent','f_salaryDue',
+  'f_gold24k','f_gold22k','f_gold18k','f_gold21k','f_goldCoins',
+  'f_silverGrams','f_silverBullion',
+  'f_dseStocks','f_intlStocks','f_mutualFunds','f_btc','f_eth','f_otherCrypto',
+  'f_gpf','f_nsc','f_bonds','f_otherInvest',
+  'f_bizCash','f_bizBank','f_pettyCash',
+  'f_finishedGoods','f_rawMaterials','f_wip','f_tradeGoods',
+  'f_tradeRec','f_advancePaid','f_secDeposit',
+  'f_personalLoan','f_creditCard','f_mortgage12','f_rentBills','f_taxesDue',
+  'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
+];
+const STEPS = ['settings','cash','metals','investments','business','liabilities','results'];
+let currentStep = 0;
+let persistTimer = null;
 
 /* ════════════════════════════════════════
    CACHE HELPERS
    ════════════════════════════════════════ */
 function cacheWrite(key, data) {
-  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+  lsSet(key, JSON.stringify({ ts: Date.now(), data }));
 }
 function cacheRead(key) {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = lsGet(key);
     if (!raw) return null;
     const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object' || typeof obj.ts !== 'number' || !('data' in obj)) return null;
-    const ttl = CACHE_TTL_BY_KEY[key] ?? CACHE_TTL_MS;
-    if (Date.now() - obj.ts > ttl) return null;
-    return obj.data;
-  } catch (_) { return null; }
-}
-function cacheReadStale(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (!obj || typeof obj !== 'object' || !('data' in obj)) return null;
+    if (Date.now() - obj.ts > CACHE_TTL_MS) return null;
     return obj.data;
   } catch (_) { return null; }
 }
@@ -207,11 +191,11 @@ async function fetchPrices(isManualRefresh = false) {
   setShimmer(true);
 
   if (!isManualRefresh) {
-    const cached = cacheRead(CACHE_KEYS.metals);
+    const cached = cacheRead('zakat_metals');
     if (cached) {
       liveGoldUsdPerOz   = cached.gold;
       liveSilverUsdPerOz = cached.silver;
-      const fxCached = cacheRead(CACHE_KEYS.fx);
+      const fxCached = cacheRead('zakat_fx');
       if (fxCached) {
         fxRates    = fxCached;
         pricesLive = true;
@@ -245,20 +229,23 @@ async function fetchPrices(isManualRefresh = false) {
     }
     if (!metalsOk) throw new Error('Metal prices unavailable');
 
-    cacheWrite(CACHE_KEYS.metals, { gold: liveGoldUsdPerOz, silver: liveSilverUsdPerOz });
-    cacheWrite(CACHE_KEYS.fx, fxRates);
+    cacheWrite('zakat_fx', fxRates);
+    cacheWrite('zakat_metals', { gold: liveGoldUsdPerOz, silver: liveSilverUsdPerOz });
+    ratesTimestampMs = Date.now();
+    trustedRatesSource = 'live';
     pricesLive = true;
     onPricesReady('live');
 
   } catch (err) {
     console.warn('Price fetch failed:', err.message);
-    const cachedMetalData = cacheReadStale(CACHE_KEYS.metals);
-    const cachedFxData    = cacheReadStale(CACHE_KEYS.fx);
-    if (cachedMetalData && cachedFxData) {
-      liveGoldUsdPerOz   = cachedMetalData.gold;
-      liveSilverUsdPerOz = cachedMetalData.silver;
-      fxRates            = cachedFxData;
+    const staleMetal = (() => { try { const r = lsGet('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    const staleFx    = (() => { try { const r = lsGet('zakat_fx');     return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    if (staleMetal && staleFx) {
+      liveGoldUsdPerOz   = staleMetal.gold;
+      liveSilverUsdPerOz = staleMetal.silver;
+      fxRates            = staleFx;
       pricesLive         = true;
+      trustedRatesSource = 'stale';
       onPricesReady('stale');
     } else {
       dot.className  = 'live-dot error';
@@ -280,6 +267,8 @@ function onPricesReady(source) {
   const now = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
   const srcLabel = source === 'cache' ? ' (cached)' : source === 'stale' ? ' (stale cache)' : '';
   ts.textContent = `${L.price_updated || 'Updated'}: ${now}${srcLabel}`;
+  ratesTimestampMs = Date.now();
+  trustedRatesSource = source;
   btn.disabled   = false;
   btn.classList.remove('spinning');
   setShimmer(false);
@@ -297,13 +286,12 @@ function setShimmer(on) {
 
 function showFallback() {
   document.getElementById('manualFallback').classList.add('visible');
-  document.getElementById('fxBanner').classList.add('fx-banner-hidden');
+  document.getElementById('fxBanner').style.display = 'none';
   document.getElementById('metalSourceBadge').className = 'source-badge error';
   document.getElementById('fxSourceBadge').className    = 'source-badge error';
 }
 function hideFallback() {
   document.getElementById('manualFallback').classList.remove('visible');
-  document.getElementById('fxBanner').classList.remove('fx-banner-hidden');
   document.getElementById('metalSourceBadge').className = 'source-badge active';
   document.getElementById('fxSourceBadge').className    = 'source-badge active';
 }
@@ -361,7 +349,7 @@ function updateFxBanner() {
     const sym = CURRENCY_SYMBOLS[cur] || cur;
     return `<div class="fx-rate-item">${cur} <span>${sym}${r.toFixed(2)}</span></div>`;
   }).join('');
-  banner.classList.remove('fx-banner-hidden');
+  banner.style.display = 'flex';
 }
 
 /* ════════════════════════════════════════
@@ -369,65 +357,11 @@ function updateFxBanner() {
    ════════════════════════════════════════ */
 function setCurrency(cur) {
   currentCurrency = cur;
-  localStorage.setItem('zakat_currency', cur);
+  lsSet('zakat_currency', cur);
   updateCurrencySymbols();
   updatePriceDisplay();
   updateFxBanner();
   calc();
-}
-
-function getLabelText(labelEl) {
-  if (!labelEl) return '';
-  let text = '';
-  labelEl.childNodes.forEach(node => {
-    if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
-    if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('tooltip-icon')) {
-      text += node.textContent;
-    }
-  });
-  return text.replace(/\s+/g, ' ').trim();
-}
-
-function ensureFieldTooltips() {
-  document.querySelectorAll('.field').forEach(field => {
-    const input = field.querySelector('input[type="number"], input[type="text"], select');
-    const label = field.querySelector('label');
-    if (!input || !label) return;
-
-    const fallback = FIELD_TOOLTIPS[input.id] || `Enter the value for ${getLabelText(label)}.`;
-    let icon = label.querySelector('.tooltip-icon');
-    if (!icon) {
-      icon = document.createElement('span');
-      icon.className = 'tooltip-icon';
-      icon.textContent = '?';
-      icon.setAttribute('data-tip', fallback);
-      label.appendChild(icon);
-    } else if (!icon.getAttribute('data-tip')) {
-      icon.setAttribute('data-tip', fallback);
-    }
-
-  });
-  refreshFieldTooltipMetadata();
-}
-
-function refreshFieldTooltipMetadata() {
-  document.querySelectorAll('.field').forEach(field => {
-    const input = field.querySelector('input[type="number"], input[type="text"], select');
-    const label = field.querySelector('label');
-    if (!input || !label) return;
-    let icon = label.querySelector('.tooltip-icon');
-    if (!icon) {
-      icon = document.createElement('span');
-      icon.className = 'tooltip-icon';
-      icon.textContent = '?';
-      label.appendChild(icon);
-    }
-    const labelText = getLabelText(label) || 'Field';
-    const tip = icon.getAttribute('data-tip') || FIELD_TOOLTIPS[input.id] || `Enter the value for ${labelText}.`;
-    if (!icon.getAttribute('data-tip')) icon.setAttribute('data-tip', tip);
-    input.setAttribute('title', tip);
-    input.setAttribute('aria-label', `${labelText}. ${tip}`);
-  });
 }
 
 function updateCurrencySymbols() {
@@ -469,6 +403,395 @@ function selectRadio(group, val, labelEl) {
 function toggleSection(id) {
   document.getElementById(id).classList.toggle('open');
 }
+
+function toggleHighContrast() {
+  const on = document.documentElement.classList.toggle('high-contrast');
+  lsSet('zakat_contrast', on ? 'on' : 'off');
+}
+
+function updatePrivacyUi() {
+  const btn = document.getElementById('privacyModeBtn');
+  const status = document.getElementById('privacyModeStatus');
+  if (!btn || !status) return;
+  btn.classList.toggle('active', privacyMode);
+  btn.textContent = privacyMode ? 'ON' : 'OFF';
+  status.textContent = privacyMode
+    ? 'Privacy mode is ON — local persistence is disabled.'
+    : 'Privacy mode is OFF — local-only persistence is enabled.';
+}
+
+function togglePrivacyMode() {
+  privacyMode = !privacyMode;
+  updatePrivacyUi();
+  if (privacyMode) {
+    updateDataFootprint();
+    return;
+  }
+  persistState();
+}
+
+function collectFormData() {
+  const payload = {};
+  FIELD_IDS.forEach(id => {
+    const val = v(id);
+    if (val > 0) payload[id] = val;
+  });
+  payload.nisabType = nisabType;
+  payload.calendarType = calendarType;
+  payload.stockMethod = stockMethod;
+  payload.currency = currentCurrency;
+  return payload;
+}
+
+function applyFormData(data = {}) {
+  FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = data[id] || 0;
+  });
+  const cur = data.currency || currentCurrency;
+  document.getElementById('currencySelect').value = cur;
+  setCurrency(cur);
+  setNisabType(data.nisabType || 'silver');
+  setCalendar(data.calendarType || 'lunar');
+  const target = data.stockMethod || 'trade';
+  const lbl = document.querySelector(`#stockMethodGroup .radio-btn input[value="${target}"]`)?.closest('.radio-btn');
+  if (lbl) selectRadio('stockMethod', target, lbl);
+}
+
+function persistState({ updateFootprint = true } = {}) {
+  if (privacyMode) return;
+  lsSet('zakat_form_data', JSON.stringify({ ts: Date.now(), data: collectFormData() }));
+  lsSet('zakat_profiles', JSON.stringify(profiles));
+  lsSet('zakat_active_profile', activeProfile);
+  if (reminderConfig) lsSet('zakat_reminder', JSON.stringify(reminderConfig));
+  if (updateFootprint) updateDataFootprint();
+}
+
+function schedulePersistState() {
+  if (privacyMode) return;
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => persistState({ updateFootprint: false }), PERSIST_THROTTLE_MS);
+}
+
+function restoreState() {
+  const saved = lsGet('zakat_form_data');
+  if (saved) {
+    try { applyFormData(JSON.parse(saved).data || {}); } catch (_) {}
+  }
+}
+
+function loadProfiles() {
+  try { profiles = JSON.parse(lsGet('zakat_profiles', '{}')) || {}; } catch (_) { profiles = {}; }
+  if (!profiles.default) profiles.default = { name: 'default', data: {} };
+  activeProfile = lsGet('zakat_active_profile', 'default') || 'default';
+  renderProfiles();
+}
+
+function renderProfiles() {
+  const sel = document.getElementById('profileSelect');
+  if (!sel) return;
+  sel.innerHTML = '';
+  Object.keys(profiles).forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = (profiles[k].name || k).slice(0, 60);
+    sel.appendChild(opt);
+  });
+  sel.value = profiles[activeProfile] ? activeProfile : 'default';
+  sel.onchange = () => {
+    activeProfile = sel.value;
+    if (profiles[activeProfile]?.data) applyFormData(profiles[activeProfile].data);
+    persistState();
+    calc();
+  };
+}
+
+function createProfile() {
+  const name = prompt('New profile name (local only):');
+  if (!name) return;
+  const id = `profile_${Date.now()}`;
+  profiles[id] = { name: name.trim().replace(/[<>"']/g, '').slice(0, 60), data: collectFormData() };
+  activeProfile = id;
+  renderProfiles();
+  persistState();
+}
+
+function saveCurrentProfile() {
+  if (!profiles[activeProfile]) profiles[activeProfile] = { name: activeProfile, data: {} };
+  profiles[activeProfile].data = collectFormData();
+  persistState();
+  calc();
+}
+
+function deleteProfile() {
+  if (activeProfile === 'default') return;
+  delete profiles[activeProfile];
+  activeProfile = 'default';
+  renderProfiles();
+  if (profiles.default?.data) applyFormData(profiles.default.data);
+  persistState();
+  calc();
+}
+
+async function deriveBackupKey(passphrase, salt) {
+  const enc = new TextEncoder();
+  const material = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function bytesToBase64(bytes) {
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function exportEncryptedBackup() {
+  const passphrase = document.getElementById('backupPassphrase')?.value || '';
+  if (!passphrase) return alert('Enter a backup passphrase.');
+  if (passphrase.length < 16) return alert('Use a stronger passphrase (minimum 16 characters).');
+  const payload = {
+    version: APP_VERSION,
+    createdAt: new Date().toISOString(),
+    data: { form: collectFormData(), profiles, reminderConfig, currency: currentCurrency }
+  };
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveBackupKey(passphrase, salt);
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(payload)));
+  const cipherBytes = new Uint8Array(cipher);
+  const out = {
+    kdf: 'PBKDF2-SHA256',
+    alg: 'AES-GCM-256',
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ct: bytesToBase64(cipherBytes)
+  };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  const objectUrl = URL.createObjectURL(blob);
+  a.href = objectUrl;
+  a.download = `zakah-backup-${Date.now()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), DOWNLOAD_REVOKE_DELAY_MS);
+}
+
+async function importEncryptedBackup(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const passphrase = document.getElementById('backupPassphrase')?.value || '';
+  if (!passphrase) return alert('Enter backup passphrase first.');
+  if (passphrase.length < 16) return alert('Use a stronger passphrase (minimum 16 characters).');
+  try {
+    const raw = JSON.parse(await file.text());
+    const salt = Uint8Array.from(atob(raw.salt), c => c.charCodeAt(0));
+    const iv = Uint8Array.from(atob(raw.iv), c => c.charCodeAt(0));
+    const ct = Uint8Array.from(atob(raw.ct), c => c.charCodeAt(0));
+    const key = await deriveBackupKey(passphrase, salt);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+    const data = JSON.parse(new TextDecoder().decode(plain));
+    if (data?.data?.form) applyFormData(data.data.form);
+    profiles = data?.data?.profiles || profiles;
+    reminderConfig = data?.data?.reminderConfig || reminderConfig;
+    renderProfiles();
+    persistState();
+    calc();
+  } catch (err) {
+    const msg = String(err?.message || '').toLowerCase();
+    if (msg.includes('json')) alert('Invalid backup file format.');
+    else if (msg.includes('decrypt') || msg.includes('operation')) alert('Decryption failed. Check passphrase or file integrity.');
+    else alert('Backup import failed.');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function requestReminderPermission() {
+  if (!('Notification' in window)) return alert('Notifications are not supported in this browser.');
+  Notification.requestPermission();
+}
+
+function computeNextReminderDate(baseDate, mode) {
+  if (!baseDate) return null;
+  const d = new Date(baseDate + 'T00:00:00');
+  const next = new Date(d);
+  next.setDate(next.getDate() + (mode === 'lunar' ? 354 : 365));
+  return next;
+}
+
+function saveReminder() {
+  const dateVal = document.getElementById('zakahDueDate')?.value;
+  const mode = document.getElementById('reminderCalendar')?.value || 'solar';
+  if (!dateVal) return;
+  reminderConfig = { date: dateVal, mode, savedAt: Date.now() };
+  persistState();
+  checkReminderNow();
+}
+
+function checkReminderNow() {
+  if (!reminderConfig || !('Notification' in window)) return;
+  const next = computeNextReminderDate(reminderConfig.date, reminderConfig.mode);
+  if (!next) return;
+  const diff = next.getTime() - Date.now();
+  if (diff <= 24 * 60 * 60 * 1000 && Notification.permission === 'granted') {
+    new Notification('Zakah Reminder', { body: `Zakah due reminder (${reminderConfig.mode === 'lunar' ? 'Hijri mode' : 'Solar mode'}) is near.` });
+  }
+}
+
+function deleteStorageKey(key) {
+  lsRemove(key);
+  updateDataFootprint();
+}
+
+function updateDataFootprint() {
+  const panel = document.getElementById('dataFootprint');
+  if (!panel) return;
+  if (privacyMode) {
+    panel.textContent = 'Privacy mode ON: localStorage writes disabled.';
+    return;
+  }
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('zakat_') || k === 'pwa_dismissed');
+  if (!keys.length) {
+    panel.textContent = 'No local keys found.';
+    return;
+  }
+  panel.innerHTML = keys.map(k => {
+    const val = lsGet(k, '') || '';
+    const size = new Blob([val]).size;
+    return `<div class="footprint-item"><span>${escapeHtml(k)}</span><span>${size} bytes</span><button class="btn-reset tiny footprint-delete-btn" type="button" data-key="${encodeURIComponent(k)}">Delete</button></div>`;
+  }).join('');
+  panel.querySelectorAll('.footprint-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteStorageKey(decodeURIComponent(btn.getAttribute('data-key') || '')));
+  });
+}
+
+function updateWizardLabel() {
+  const el = document.getElementById('wizardStepLabel');
+  if (el) el.textContent = `Step ${Math.min(currentStep + 1, STEPS.length)} of ${STEPS.length}`;
+}
+
+function goStep(index) {
+  currentStep = Math.max(0, Math.min(STEPS.length - 1, index));
+  navigateToHash(`#${STEPS[currentStep]}`);
+  updateWizardLabel();
+}
+function nextStep() { goStep(currentStep + 1); }
+function prevStep() { goStep(currentStep - 1); }
+
+function updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, investTotal, bizTotal }) {
+  const hints = [];
+  if (totalAssets > 0 && liabTotal === 0) hints.push('You entered assets but no liabilities due within 12 months. Confirm deductions.');
+  if (cashTotal > 0 && v('f_bankFD') > 0) hints.push('Ensure accrued bank interest (Riba) is excluded.');
+  if (investTotal > 0 && stockMethod === 'trade' && (v('f_dseStocks') + v('f_intlStocks')) > 0) hints.push('If stocks are long-term holdings, consider the 25% proxy method.');
+  if (metalTotal === 0 && (v('f_gold24k') + v('f_silverGrams')) === 0) hints.push('If you own gold/silver, include only zakatable holdings.');
+  if (bizTotal > 0 && v('f_tradePayables') === 0) hints.push('Business assets entered with zero trade payables — verify short-term liabilities.');
+  document.getElementById('smartHints').innerHTML = hints.length ? `<ul>${hints.map(h => `<li>${h}</li>`).join('')}</ul>` : 'No critical omissions detected.';
+}
+
+function updateExplainability({ totalAssets, liabTotal, netWealth, nisabValue, zakahRate, zakahDue }) {
+  document.getElementById('explainContent').textContent =
+`Formula: Net Zakatable Wealth = Total Assets − Eligible Liabilities
+Values: ${fmt(totalAssets)} − ${fmt(liabTotal)} = ${fmt(netWealth)}
+Nisab Check: ${fmt(netWealth)} ${netWealth >= nisabValue ? '≥' : '<'} ${fmt(nisabValue)}
+Zakah: ${fmt(netWealth)} × ${(zakahRate * 100).toFixed(3)}% = ${fmt(zakahDue)}
+Assumptions: Only liabilities due within 12 months are deducted, and all calculations stay on-device.`;
+}
+
+function updateScenarioComparison(netWealth, silverPerGram, goldPerGram) {
+  const silverN = 612.36 * silverPerGram;
+  const goldN = 87.48 * goldPerGram;
+  const sLunar = netWealth >= silverN ? netWealth * 0.025 : 0;
+  const sSolar = netWealth >= silverN ? netWealth * 0.02577 : 0;
+  const gLunar = netWealth >= goldN ? netWealth * 0.025 : 0;
+  const gSolar = netWealth >= goldN ? netWealth * 0.02577 : 0;
+  document.getElementById('scenarioCompare').textContent =
+`Silver + Lunar: ${fmt(sLunar)}
+Silver + Solar: ${fmt(sSolar)}
+Gold + Lunar: ${fmt(gLunar)}
+Gold + Solar: ${fmt(gSolar)}`;
+}
+
+function updateStaleStatus() {
+  const el = document.getElementById('staleStatus');
+  if (!el) return;
+  const ageH = ratesTimestampMs ? ((Date.now() - ratesTimestampMs) / 3600000) : null;
+  const stale = ageH !== null && ageH > 24;
+  const src = trustedRatesSource === 'stale' ? 'stale cache' : trustedRatesSource;
+  el.textContent = !ratesTimestampMs
+    ? 'Rates status: waiting for first successful fetch.'
+    : `Rates status: ${stale ? 'STALE' : 'fresh'} · source: ${src} · age: ${ageH.toFixed(1)}h`;
+}
+
+function updateNetworkBadge() {
+  const online = navigator.onLine;
+  const badge = document.getElementById('networkBadge');
+  const count = document.getElementById('networkCountBadge');
+  if (badge) badge.textContent = `🌐 Network: ${online ? 'online' : 'offline'}`;
+  if (count) count.textContent = `📡 Fetch calls: ${networkRequestCount}`;
+}
+
+function buildSupportTemplate() {
+  const text = [
+    'Issue report (privacy-preserving)',
+    `App version: ${APP_VERSION}`,
+    `Browser: ${navigator.userAgent}`,
+    `Language: ${currentLang}`,
+    `Currency: ${currentCurrency}`,
+    `Nisab: ${nisabType}, Calendar: ${calendarType}, Stock method: ${stockMethod}`,
+    'Financial input values: [REDACTED]',
+    'Issue details:',
+    '- What happened?',
+    '- Expected behavior?',
+    '- Steps to reproduce?'
+  ].join('\n');
+  const el = document.getElementById('supportTemplate');
+  if (el) el.value = text;
+}
+
+function copySupportTemplate() {
+  const text = document.getElementById('supportTemplate')?.value || '';
+  if (!text) return;
+  navigator.clipboard?.writeText(text).catch(() => {
+    alert('Copy failed. Please copy the template manually.');
+  });
+}
+
+async function updateIntegrityPanel() {
+  const out = document.getElementById('integrityPanel');
+  if (!out || !window.crypto?.subtle) return;
+  try {
+    const [a, b, c, d] = await Promise.all([
+      fetch('./index.html').then(r => r.text()),
+      fetch('./styles.css').then(r => r.text()),
+      fetch('./sw.js').then(r => r.text()),
+      fetch('./pdf-export.js').then(r => r.text())
+    ]);
+    const bytes = new TextEncoder().encode(`${a}\n${b}\n${c}\n${d}\n${APP_VERSION}`);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const hex = Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
+    out.textContent = `Version: ${APP_VERSION} · SHA-256: ${hex.slice(0, 24)}…`;
+  } catch (_) {
+    out.textContent = `Version: ${APP_VERSION} · Hash unavailable`;
+  }
+}
+
+/* intercept network requests for trust-by-design indicator */
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  networkRequestCount += 1;
+  updateNetworkBadge();
+  return _nativeFetch(...args);
+};
 
 /* ════════════════════════════════════════
    MAIN CALCULATION
@@ -545,23 +868,9 @@ function calc() {
   const isEligible = nisabValue > 0 && netWealth >= nisabValue;
   const zakahDue   = isEligible ? netWealth * zakahRate : 0;
 
-  const fieldIds = [
-    'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
-    'f_bkash','f_nagad','f_upay','f_cellfin','f_rocket','f_paypal','f_othersWallet',
-    'f_moneyLent','f_salaryDue',
-    'f_gold24k','f_gold22k','f_gold18k','f_gold21k','f_goldCoins',
-    'f_silverGrams','f_silverBullion',
-    'f_dseStocks','f_intlStocks','f_mutualFunds','f_btc','f_eth','f_otherCrypto',
-    'f_gpf','f_nsc','f_bonds','f_otherInvest',
-    'f_bizCash','f_bizBank','f_pettyCash',
-    'f_finishedGoods','f_rawMaterials','f_wip','f_tradeGoods',
-    'f_tradeRec','f_advancePaid','f_secDeposit',
-    'f_personalLoan','f_creditCard','f_mortgage12','f_rentBills','f_taxesDue',
-    'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
-  ];
-  const filledCount = fieldIds.filter(id => v(id) > 0).length;
+  const filledCount = FIELD_IDS.filter(id => v(id) > 0).length;
   document.getElementById('progressFill').style.width =
-    Math.min(100, Math.round(filledCount / fieldIds.length * 100)) + '%';
+    Math.min(100, Math.round(filledCount / FIELD_IDS.length * 100)) + '%';
 
   document.getElementById('tot-cash').textContent   = fmt(cashTotal);
   document.getElementById('tot-metals').textContent = fmt(metalTotal);
@@ -594,6 +903,13 @@ function calc() {
   document.getElementById('bd_liab').textContent   = fmt(liabTotal);
   document.getElementById('bd_net').textContent    = fmt(netWealth);
   document.getElementById('bd_zakah').textContent  = fmt(zakahDue);
+
+  updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, investTotal, bizTotal });
+  updateExplainability({ totalAssets, liabTotal, netWealth, nisabValue, zakahRate, zakahDue });
+  updateScenarioComparison(netWealth, silverPerGram, goldPerGram);
+  updateStaleStatus();
+  buildSupportTemplate();
+  schedulePersistState();
 }
 
 /* ════════════════════════════════════════
@@ -601,6 +917,9 @@ function calc() {
    ════════════════════════════════════════ */
 function resetAll() {
   document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = 0);
+  lsRemove('zakat_form_data');
+  if (profiles[activeProfile]) profiles[activeProfile].data = {};
+  persistState();
   calc();
 }
 
@@ -792,7 +1111,7 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      navigator.standalone === true;
 
 function wasDismissed() {
-  const ts = parseInt(localStorage.getItem('pwa_dismissed') || '0', 10);
+  const ts = parseInt(lsGet('pwa_dismissed', '0') || '0', 10);
   return ts && (Date.now() - ts) < 30 * 24 * 60 * 60 * 1000;
 }
 function showBanner() { if (isStandalone || wasDismissed()) return; banner.hidden = false; if (isIos) iosHint.hidden = false; }
@@ -807,7 +1126,7 @@ btnInstall?.addEventListener('click', async () => {
     deferredPrompt = null;
   }
 });
-btnDismiss?.addEventListener('click', () => { localStorage.setItem('pwa_dismissed', String(Date.now())); hideBanner(); });
+btnDismiss?.addEventListener('click', () => { lsSet('pwa_dismissed', String(Date.now())); hideBanner(); });
 if (isIos && !isStandalone) { setTimeout(showBanner, 3500); if (btnInstall) btnInstall.hidden = true; }
 window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = null; });
 
@@ -815,16 +1134,38 @@ window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = n
    INIT
    ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  ensureFieldTooltips();
-  const savedCur = localStorage.getItem('zakat_currency') || 'BDT';
+  const savedCur = lsGet('zakat_currency', 'BDT') || 'BDT';
   document.getElementById('currencySelect').value = savedCur;
   currentCurrency = savedCur;
   updateCurrencySymbols();
+  updateNetworkBadge();
+  updatePrivacyUi();
+  if (lsGet('zakat_contrast') === 'on') document.documentElement.classList.add('high-contrast');
+  try { reminderConfig = JSON.parse(lsGet('zakat_reminder', 'null')); } catch (_) { reminderConfig = null; }
+  if (reminderConfig?.date) {
+    const due = document.getElementById('zakahDueDate');
+    const mode = document.getElementById('reminderCalendar');
+    if (due) due.value = reminderConfig.date;
+    if (mode) mode.value = reminderConfig.mode || 'solar';
+  }
+  loadProfiles();
+  restoreState();
 
   document.getElementById('footerYear').textContent = new Date().getFullYear();
 
   document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
   document.getElementById('btn-bn').classList.toggle('active', currentLang === 'bn');
+  document.querySelectorAll('.result-stat-value').forEach(el => {
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+  });
+
+  window.addEventListener('online', updateNetworkBadge);
+  window.addEventListener('offline', updateNetworkBadge);
+  setInterval(() => { updateStaleStatus(); checkReminderNow(); }, 60000);
+  updateDataFootprint();
+  updateIntegrityPanel();
+  updateWizardLabel();
 
   loadLang(currentLang, () => {
     applyLang(currentLang);

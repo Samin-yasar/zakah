@@ -66,6 +66,14 @@ All computation happens **entirely in the user's browser**. No data is ever sent
 | **Calendar Types** | Lunar / Hijri (2.5%) or Solar / Gregorian (2.577%) |
 | **Stock Methods** | Short-term Trading (full market value) or Long-term Investment (25% proxy) |
 | **Auto-Save** | Form data auto-saved to `localStorage` — survives page refreshes |
+| **Privacy Mode (Default ON)** | Session-only operation; disables all `localStorage` writes |
+| **Encrypted Backup** | Local export/import of encrypted JSON backups (user passphrase) |
+| **Profiles** | Multiple on-device profiles for yearly/scenario workflows |
+| **Reminder Tools** | Local due-date reminders with optional Hijri-mode annual scheduling |
+| **Data Footprint Dashboard** | View/delete local keys, size, and persistence footprint |
+| **Explainability + Scenario Compare** | Formula trace panel and side-by-side silver/gold & lunar/solar comparison |
+| **Guided Flow + Smart Hints** | Step-by-step wizard and local-only omission prompts |
+| **Integrity Display** | Runtime release version and integrity hash panel |
 | **PDF Export** | Download a formatted Zakah summary report via jsPDF |
 | **Bilingual** | Full English and Bengali (বাংলা) UI with instant language switching |
 | **Dark / Light Theme** | Artisan Islamic-themed icon toggle, persisted to `localStorage` |
@@ -301,7 +309,7 @@ The app is a fully installable Progressive Web App:
 
 ## Local Data Persistence
 
-All form data is automatically saved to **`localStorage`** under the key `zakat_form_data` every time any input changes (debounced 400ms). This includes:
+When **Privacy Mode is OFF**, form data is saved to **`localStorage`** under the key `zakat_form_data` every time input changes. When **Privacy Mode is ON** (default), persistence is disabled and data remains session-only in memory.
 
 - All numeric field values (only non-zero values are stored to keep payload small)
 - Nisab type (`silver` / `gold`)
@@ -336,7 +344,8 @@ The PDF is generated entirely client-side and downloaded directly — no data is
 |---|---|
 | **Data storage** | `localStorage` only — on the user's device, never transmitted |
 | **Network requests** | Only to `./data/metals.json` and `./data/rates.json` (same-origin static files) |
-| **Third-party scripts** | jsPDF (CDN, deferred) and Google Fonts — no tracking scripts |
+| **Third-party scripts** | jsPDF bundled locally (`./libs/jspdf.umd.min.js`) — no tracking scripts |
+| **Third-party minimization** | Core app shell avoids external font network dependencies |
 | **Analytics** | None |
 | **Cookies** | None |
 | **Ads** | None |
