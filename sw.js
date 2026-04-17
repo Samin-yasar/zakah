@@ -3,8 +3,8 @@
    Samin's Initiatives
    ════════════════════════════════════════ */
 
-const CACHE_NAME   = 'zakah-calc-v10';
-const DATA_CACHE   = 'zakah-data-v10';
+const CACHE_NAME   = 'zakah-calc-v11';
+const DATA_CACHE   = 'zakah-data-v11';
 
 // Periodic sync tag — must match the tag registered in the client
 const PERIODIC_SYNC_TAG = 'zakah-rates-refresh';
@@ -15,6 +15,7 @@ const BGS_TAG = 'zakah-rates-bg-sync';
 // Core shell
 const SHELL_ASSETS = [
   './index.html',
+  './app.js',
   './styles.css',
   './pdf-export.js',
   './libs/jspdf.umd.min.js',

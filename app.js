@@ -156,6 +156,7 @@ const FIELD_IDS = [
 ];
 const STEPS = ['settings','cash','metals','investments','business','liabilities','results'];
 let currentStep = 0;
+let persistTimer = null;
 
 /* ════════════════════════════════════════
    CACHE HELPERS
@@ -456,13 +457,19 @@ function applyFormData(data = {}) {
   if (lbl) selectRadio('stockMethod', target, lbl);
 }
 
-function persistState() {
+function persistState({ updateFootprint = true } = {}) {
   if (privacyMode) return;
   lsSet('zakat_form_data', JSON.stringify({ ts: Date.now(), data: collectFormData() }));
   lsSet('zakat_profiles', JSON.stringify(profiles));
   lsSet('zakat_active_profile', activeProfile);
   if (reminderConfig) lsSet('zakat_reminder', JSON.stringify(reminderConfig));
-  updateDataFootprint();
+  if (updateFootprint) updateDataFootprint();
+}
+
+function schedulePersistState() {
+  if (privacyMode) return;
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => persistState({ updateFootprint: false }), 250);
 }
 
 function restoreState() {
@@ -537,6 +544,15 @@ async function deriveBackupKey(passphrase, salt) {
   );
 }
 
+function bytesToBase64(bytes) {
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
 async function exportEncryptedBackup() {
   const passphrase = document.getElementById('backupPassphrase')?.value || '';
   if (!passphrase) return alert('Enter a backup passphrase.');
@@ -551,19 +567,21 @@ async function exportEncryptedBackup() {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveBackupKey(passphrase, salt);
   const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(payload)));
+  const cipherBytes = new Uint8Array(cipher);
   const out = {
     kdf: 'PBKDF2-SHA256',
     alg: 'AES-GCM-256',
-    salt: btoa(String.fromCharCode(...salt)),
-    iv: btoa(String.fromCharCode(...iv)),
-    ct: btoa(String.fromCharCode(...new Uint8Array(cipher)))
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ct: bytesToBase64(cipherBytes)
   };
   const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(blob);
+  a.href = objectUrl;
   a.download = `zakah-backup-${Date.now()}.json`;
   a.click();
-  URL.revokeObjectURL(a.href);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 }
 
 async function importEncryptedBackup(event) {
@@ -717,7 +735,7 @@ function updateNetworkBadge() {
   const badge = document.getElementById('networkBadge');
   const count = document.getElementById('networkCountBadge');
   if (badge) badge.textContent = `🌐 Network: ${online ? 'online' : 'offline'}`;
-  if (count) count.textContent = `📡 Requests: ${networkRequestCount}`;
+  if (count) count.textContent = `📡 Fetch calls: ${networkRequestCount}`;
 }
 
 function buildSupportTemplate() {
@@ -751,10 +769,10 @@ async function updateIntegrityPanel() {
   if (!out || !window.crypto?.subtle) return;
   try {
     const [a, b, c, d] = await Promise.all([
-      fetch('./index.html', { cache: 'no-store' }).then(r => r.text()),
-      fetch('./styles.css', { cache: 'no-store' }).then(r => r.text()),
-      fetch('./sw.js', { cache: 'no-store' }).then(r => r.text()),
-      fetch('./pdf-export.js', { cache: 'no-store' }).then(r => r.text())
+      fetch('./index.html').then(r => r.text()),
+      fetch('./styles.css').then(r => r.text()),
+      fetch('./sw.js').then(r => r.text()),
+      fetch('./pdf-export.js').then(r => r.text())
     ]);
     const bytes = new TextEncoder().encode(`${a}\n${b}\n${c}\n${d}\n${APP_VERSION}`);
     const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -889,7 +907,7 @@ function calc() {
   updateScenarioComparison(netWealth, silverPerGram, goldPerGram);
   updateStaleStatus();
   buildSupportTemplate();
-  persistState();
+  schedulePersistState();
 }
 
 /* ════════════════════════════════════════
