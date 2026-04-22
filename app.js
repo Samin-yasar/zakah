@@ -157,6 +157,15 @@ const FIELD_IDS = [
   'f_bizLoan','f_tradePayables','f_salariesPayable','f_advanceReceived'
 ];
 const STEPS = ['settings','cash','metals','investments','business','liabilities','results'];
+const STEP_TITLES = {
+  settings: 'Settings',
+  cash: 'Cash',
+  metals: 'Metals',
+  investments: 'Investments',
+  business: 'Business',
+  liabilities: 'Liabilities',
+  results: 'Results'
+};
 let currentStep = 0;
 let persistTimer = null;
 
@@ -678,7 +687,8 @@ function updateDataFootprint() {
 function updateWizardLabel() {
   const steps = STEPS.length;
   const current = Math.min(currentStep + 1, steps);
-  const text = `Step ${current} of ${steps}`;
+  const title = STEP_TITLES[STEPS[currentStep]] || '';
+  const text = `Step ${current} of ${steps}${title ? ` · ${title}` : ''}`;
   
   const elDesktop = document.getElementById('wizardStepLabel');
   const elMobile = document.getElementById('mobileStepLabel');
@@ -687,6 +697,7 @@ function updateWizardLabel() {
   if (elMobile) elMobile.textContent = text;
   
   updateWizardDots();
+  updateWizardNavButtons();
 }
 
 function updateWizardDots() {
@@ -727,6 +738,25 @@ function goStep(index) {
 }
 function nextStep() { goStep(currentStep + 1); }
 function prevStep() { goStep(currentStep - 1); }
+
+function updateWizardNavButtons() {
+  const atFirstStep = currentStep === 0;
+  const atLastStep = currentStep === (STEPS.length - 1);
+  const controls = [
+    document.getElementById('desktopNavPrev'),
+    document.getElementById('mobileNavPrev')
+  ];
+  controls.forEach(btn => {
+    if (!btn) return;
+    btn.disabled = atFirstStep;
+    btn.setAttribute('aria-disabled', String(atFirstStep));
+  });
+
+  const desktopNextLabel = document.getElementById('desktopNavNextLabel');
+  const mobileNextLabel = document.getElementById('mobileNavNextLabel');
+  if (desktopNextLabel) desktopNextLabel.textContent = atLastStep ? 'Results' : 'Next →';
+  if (mobileNextLabel) mobileNextLabel.textContent = atLastStep ? 'Results' : 'Next';
+}
 
 function updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, investTotal, bizTotal }) {
   const hints = [];
@@ -1033,7 +1063,7 @@ function shareMore() {
     url:   window.location.href,
   };
   if (navigator.share) {
-    });
+    navigator.share(shareData).catch(() => shareCopyLink());
   } else {
     shareCopyLink();
   }

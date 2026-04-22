@@ -1488,6 +1488,17 @@ details[open].privacy-card .privacy-card-chevron {
   transform: scale(0.95);
   background: var(--surface3);
 }
+.mobile-nav-btn:disabled,
+.wizard-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.mobile-nav-btn:disabled:active,
+.wizard-btn:disabled:active {
+  transform: none;
+}
 .mobile-nav-next {
   background: linear-gradient(135deg, var(--emerald-dim), var(--emerald));
   color: #fff;
