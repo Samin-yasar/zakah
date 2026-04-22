@@ -676,14 +676,54 @@ function updateDataFootprint() {
 }
 
 function updateWizardLabel() {
-  const el = document.getElementById('wizardStepLabel');
-  if (el) el.textContent = `Step ${Math.min(currentStep + 1, STEPS.length)} of ${STEPS.length}`;
+  const steps = STEPS.length;
+  const current = Math.min(currentStep + 1, steps);
+  const text = `Step ${current} of ${steps}`;
+  
+  const elDesktop = document.getElementById('wizardStepLabel');
+  const elMobile = document.getElementById('mobileStepLabel');
+  
+  if (elDesktop) elDesktop.textContent = text;
+  if (elMobile) elMobile.textContent = text;
+  
+  updateWizardDots();
+}
+
+function updateWizardDots() {
+  const containers = [
+    document.getElementById('wizardDots'),
+    document.getElementById('mobileStepDots')
+  ];
+  
+  containers.forEach(container => {
+    if (!container) return;
+    container.innerHTML = '';
+    STEPS.forEach((_, idx) => {
+      const dot = document.createElement('div');
+      dot.className = 'step-dot' + (idx === currentStep ? ' active' : '');
+      dot.onclick = () => goStep(idx);
+      container.appendChild(dot);
+    });
+  });
 }
 
 function goStep(index) {
   currentStep = Math.max(0, Math.min(STEPS.length - 1, index));
-  navigateToHash(`#${STEPS[currentStep]}`);
+  const targetHash = `#${STEPS[currentStep]}`;
+  navigateToHash(targetHash);
   updateWizardLabel();
+  
+  // Visual feedback (haptic-like pulse)
+  const navs = [document.querySelector('.wizard-card'), document.getElementById('mobileBottomNav')];
+  navs.forEach(nav => {
+    if (nav) {
+      nav.animate([
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.02)' },
+        { transform: 'scale(1)' }
+      ], { duration: 200, easing: 'ease-out' });
+    }
+  });
 }
 function nextStep() { goStep(currentStep + 1); }
 function prevStep() { goStep(currentStep - 1); }
@@ -993,11 +1033,32 @@ function shareMore() {
     url:   window.location.href,
   };
   if (navigator.share) {
-    navigator.share(shareData).catch(err => {
-      if (err.name !== 'AbortError') console.warn('[Share]', err);
     });
   } else {
     shareCopyLink();
+  }
+}
+
+/* ════════════════════════════════════════
+   SETTINGS DRAWER
+   ════════════════════════════════════════ */
+function openSettingsDrawer() {
+  const drawer = document.getElementById('settingsDrawer');
+  const overlay = document.getElementById('settingsDrawerOverlay');
+  if (drawer && overlay) {
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeSettingsDrawer() {
+  const drawer = document.getElementById('settingsDrawer');
+  const overlay = document.getElementById('settingsDrawerOverlay');
+  if (drawer && overlay) {
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
   }
 }
 
@@ -1029,6 +1090,13 @@ const HASH_SECTION_MAP = {
 function navigateToHash(hash) {
   if (!hash || hash === '#') return;
   const key = hash.replace('#', '').toLowerCase();
+  
+  // Auto-expand privacy card if specifically targeted
+  if (key === 'privacy-tools') {
+    const privacyCard = document.getElementById('privacyDetailsCard');
+    if (privacyCard) privacyCard.open = true;
+  }
+  
   if (!(key in HASH_SECTION_MAP)) return;
   const sectionCardId = HASH_SECTION_MAP[key];
   if (sectionCardId) {
@@ -1037,7 +1105,15 @@ function navigateToHash(hash) {
   }
   setTimeout(() => {
     const anchor = document.getElementById(key);
-    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (anchor) {
+      const headerOffset = 80;
+      const elementPosition = anchor.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   }, 80);
 }
 
@@ -1165,7 +1241,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => { updateStaleStatus(); checkReminderNow(); }, 60000);
   updateDataFootprint();
   updateIntegrityPanel();
-  updateWizardLabel();
+  updateWizardLabel(); // This now also updates dots
+
+  // Settings drawer accessibility
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSettingsDrawer();
+  });
 
   loadLang(currentLang, () => {
     applyLang(currentLang);

@@ -49,28 +49,7 @@
       </div>
     </div>
     <div class="header-controls">
-      <div class="pill-toggle" id="langToggle">
-        <button onclick="setLang('en')" id="btn-en" class="active">EN</button>
-        <button onclick="setLang('bn')" id="btn-bn">বাং</button>
-      </div>
-      <select class="currency-select" id="currencySelect" onchange="setCurrency(this.value)">
-        <option value="BDT">৳ BDT</option>
-        <option value="USD">$ USD</option>
-        <option value="SAR">﷼ SAR</option>
-        <option value="AED">د.إ AED</option>
-        <option value="GBP">£ GBP</option>
-        <option value="AUD">A$ AUD</option>
-        <option value="INR">₹ INR</option>
-        <option value="CAD">C$ CAD</option>
-        <option value="MYR">MR MYR</option>
-        <option value="JPY">¥ JPY</option>
-        <option value="IDR">RP IDR</option>
-      </select>
-
-      <!-- ═══ ARTISAN THEME TOGGLE ═══
-           Dark mode icon: Crescent moon with a star (hilal) 
-           Light mode icon: 8-pointed Shamsa / Rub el Hizb rosette
-      -->
+      <!-- Theme toggle (always visible) -->
       <button
         class="btn-theme-toggle"
         id="themeToggleBtn"
@@ -79,104 +58,83 @@
         data-tooltip="Toggle theme"
       >
         <div class="theme-icon-wrap" id="themeIconWrap">
-
           <!-- DARK MODE ICON: Crescent + Star (Hilal) -->
           <div class="icon-dark" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Crescent moon body -->
-              <path
-                d="M14.5 3.2A8 8 0 1 0 18.8 14.5 6.2 6.2 0 0 1 14.5 3.2Z"
-                fill="none"
-                stroke="#e6c96e"
-                stroke-width="1.3"
-                stroke-linejoin="round"
-              />
-              <!-- Inner crescent cutout arc feel -->
-              <path
-                d="M14.7 3.5A6 6 0 0 1 18.5 14"
-                stroke="#e6c96e"
-                stroke-width="0.55"
-                stroke-linecap="round"
-                opacity="0.45"
-              />
-              <!-- 4-pointed star cluster -->
-              <g transform="translate(17.2,4.5) rotate(22)">
-                <path d="M0-2.4 0.55-0.55 2.4 0 0.55 0.55 0 2.4 -0.55 0.55 -2.4 0 -0.55-0.55Z"
-                  fill="#e6c96e" opacity="0.9" transform="scale(0.58)"/>
-              </g>
-              <!-- Tiny dot star -->
+              <path d="M14.5 3.2A8 8 0 1 0 18.8 14.5 6.2 6.2 0 0 1 14.5 3.2Z" fill="none" stroke="#e6c96e" stroke-width="1.3" stroke-linejoin="round"/>
+              <path d="M14.7 3.5A6 6 0 0 1 18.5 14" stroke="#e6c96e" stroke-width="0.55" stroke-linecap="round" opacity="0.45"/>
+              <g transform="translate(17.2,4.5) rotate(22)"><path d="M0-2.4 0.55-0.55 2.4 0 0.55 0.55 0 2.4 -0.55 0.55 -2.4 0 -0.55-0.55Z" fill="#e6c96e" opacity="0.9" transform="scale(0.58)"/></g>
               <circle cx="17.8" cy="7.4" r="0.65" fill="#e6c96e" opacity="0.6"/>
-              <!-- Subtle glow dots -->
-              <circle cx="5"    cy="5.5" r="0.4"  fill="#e6c96e" opacity="0.3"/>
-              <circle cx="3.5"  cy="9"   r="0.3"  fill="#e6c96e" opacity="0.2"/>
+              <circle cx="5" cy="5.5" r="0.4" fill="#e6c96e" opacity="0.3"/>
+              <circle cx="3.5" cy="9" r="0.3" fill="#e6c96e" opacity="0.2"/>
             </svg>
           </div>
-
-          <!-- LIGHT MODE ICON: 8-pointed Shamsa / Islamic geometric rosette -->
+          <!-- LIGHT MODE ICON: 8-pointed Shamsa -->
           <div class="icon-light" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Outer 8-pointed star (Rub el Hizb / Shamsa) -->
-              <path
-                d="M11 1.5
-                   L12.5 5.5 L16.2 3.5 L14.5 7.3
-                   L18.5 8.5 L15 11
-                   L18.5 13.5 L14.5 14.7
-                   L16.2 18.5 L12.5 16.5
-                   L11 20.5 L9.5 16.5
-                   L5.8 18.5 L7.5 14.7
-                   L3.5 13.5 L7 11
-                   L3.5 8.5 L7.5 7.3
-                   L5.8 3.5 L9.5 5.5 Z"
-                fill="none"
-                stroke="#9a6f1a"
-                stroke-width="1.1"
-                stroke-linejoin="round"
-              />
-              <!-- Inner octagon ring -->
-              <path
-                d="M11 5.8
-                   L12.8 7.2 L14.8 6.8 L15.2 8.8
-                   L16.6 10 L16.2 12.2 L14.8 13.4
-                   L15.2 15.2 L13 15.6 L11 16.4
-                   L9 15.6 L6.8 15.2 L7.2 13.4
-                   L5.8 12.2 L5.4 10 L6.8 8.8
-                   L7.2 6.8 L9.2 7.2 Z"
-                fill="none"
-                stroke="#9a6f1a"
-                stroke-width="0.7"
-                stroke-linejoin="round"
-                opacity="0.6"
-              />
-              <!-- Centre sun disc -->
+              <path d="M11 1.5 L12.5 5.5 L16.2 3.5 L14.5 7.3 L18.5 8.5 L15 11 L18.5 13.5 L14.5 14.7 L16.2 18.5 L12.5 16.5 L11 20.5 L9.5 16.5 L5.8 18.5 L7.5 14.7 L3.5 13.5 L7 11 L3.5 8.5 L7.5 7.3 L5.8 3.5 L9.5 5.5 Z" fill="none" stroke="#9a6f1a" stroke-width="1.1" stroke-linejoin="round"/>
               <circle cx="11" cy="11" r="2.6" fill="none" stroke="#9a6f1a" stroke-width="1.1"/>
               <circle cx="11" cy="11" r="1.1" fill="#9a6f1a" opacity="0.7"/>
-              <!-- 8 radial spokes between star points -->
-              <g stroke="#9a6f1a" stroke-width="0.5" opacity="0.35">
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(0,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(45,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(90,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(135,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(180,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(225,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(270,11,11)"/>
-                <line x1="11" y1="8.4"  x2="11" y2="3.5"   transform="rotate(315,11,11)"/>
-              </g>
             </svg>
           </div>
-
         </div>
       </button>
 
-      <!-- Share button -->
-      <button class="btn-icon-header" id="shareBtn" onclick="openShareModal()" title="Share">
-        ↑
-      </button>
-      <button class="btn-icon-header" id="contrastToggleBtn" onclick="toggleHighContrast()" title="High contrast" aria-label="Toggle high contrast">
-        ◐
+      <!-- Settings drawer trigger -->
+      <button class="btn-icon-header btn-settings-trigger" id="settingsDrawerBtn" onclick="openSettingsDrawer()" aria-label="Settings & Tools">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
       </button>
     </div>
   </div>
 </header>
+
+<!-- ═══ SETTINGS DRAWER ═══ -->
+<div class="settings-drawer-overlay" id="settingsDrawerOverlay" onclick="closeSettingsDrawer()" aria-hidden="true"></div>
+<div class="settings-drawer" id="settingsDrawer" role="dialog" aria-label="Settings" aria-modal="true">
+  <div class="settings-drawer-header">
+    <span class="settings-drawer-title">⚙ Settings</span>
+    <button class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close settings">✕</button>
+  </div>
+  <div class="settings-drawer-body">
+
+    <div class="drawer-section-label">🌐 Language</div>
+    <div class="pill-toggle pill-toggle-full" style="margin-bottom:16px">
+      <button onclick="setLang('en')" id="btn-en" class="active">EN — English</button>
+      <button onclick="setLang('bn')" id="btn-bn">বাং — বাংলা</button>
+    </div>
+
+    <div class="drawer-section-label">💱 Currency</div>
+    <select class="currency-select drawer-currency" id="currencySelect" onchange="setCurrency(this.value)" style="width:100%;margin-bottom:16px">
+      <option value="BDT">৳ BDT — Bangladeshi Taka</option>
+      <option value="USD">$ USD — US Dollar</option>
+      <option value="SAR">﷼ SAR — Saudi Riyal</option>
+      <option value="AED">د.إ AED — UAE Dirham</option>
+      <option value="GBP">£ GBP — British Pound</option>
+      <option value="AUD">A$ AUD — Australian Dollar</option>
+      <option value="INR">₹ INR — Indian Rupee</option>
+      <option value="CAD">C$ CAD — Canadian Dollar</option>
+      <option value="MYR">MR MYR — Malaysian Ringgit</option>
+      <option value="JPY">¥ JPY — Japanese Yen</option>
+      <option value="IDR">RP IDR — Indonesian Rupiah</option>
+    </select>
+
+    <div class="drawer-section-label">🎨 Display</div>
+    <div class="drawer-action-row">
+      <button class="drawer-action-btn" onclick="toggleHighContrast()" id="contrastToggleBtn" aria-label="Toggle high contrast">
+        <span>◐</span> High Contrast
+      </button>
+      <button class="drawer-action-btn" onclick="openShareModal(); closeSettingsDrawer();" id="shareBtn">
+        <span>↑</span> Share App
+      </button>
+    </div>
+
+    <div class="drawer-section-label" style="margin-top:16px">ℹ About</div>
+    <div class="drawer-info-text">Zakah Calculator v2026. 100% local processing — no data ever leaves your device.</div>
+  </div>
+</div>
 
 <main>
 <div class="wrap">
@@ -204,13 +162,15 @@
       <div class="progress-bar-fill" id="progressFill"></div>
   </div>
 
-  <div class="wizard-card fade-up" aria-label="Guided flow">
+  <!-- Desktop wizard card (hidden on mobile, replaced by bottom nav) -->
+  <div class="wizard-card fade-up desktop-wizard" aria-label="Guided flow">
     <div class="wizard-head">
       <strong>Guided Steps</strong>
       <span id="wizardStepLabel">Step 1 of 7</span>
     </div>
     <div class="wizard-controls">
       <button class="btn-reset wizard-btn" type="button" onclick="prevStep()">← Previous</button>
+      <div class="wizard-step-dots" id="wizardDots"></div>
       <button class="btn-pdf wizard-btn" type="button" onclick="nextStep()">Next →</button>
     </div>
   </div>
@@ -325,9 +285,12 @@
   </div>
 
   <a class="section-anchor" id="privacy-tools"></a>
-  <div class="settings-card fade-up">
-    <div class="settings-card-title">🔐 <span>Privacy, Storage & Reliability</span></div>
-    <div class="privacy-grid">
+  <details class="settings-card privacy-card fade-up" id="privacyDetailsCard">
+    <summary class="privacy-card-summary">
+      <span class="settings-card-title" style="margin-bottom:0">🔐 <span>Advanced: Privacy &amp; Storage</span></span>
+      <span class="privacy-card-chevron">▾</span>
+    </summary>
+    <div class="privacy-grid" style="margin-top:16px">
       <div class="privacy-mode-toggle">
         <div>
           <strong>Privacy Mode</strong>
@@ -336,26 +299,29 @@
         <button id="privacyModeBtn" class="pill-chip active" type="button" onclick="togglePrivacyMode()">ON</button>
       </div>
       <div class="privacy-mode-status" id="privacyModeStatus" role="status" aria-live="polite">Privacy mode is ON — local persistence is disabled.</div>
+      <div class="drawer-section-label">👤 Profiles</div>
       <div class="profile-row">
         <select id="profileSelect" class="field-select" aria-label="Select profile"></select>
-        <button class="btn-reset" type="button" onclick="createProfile()">New Profile</button>
-        <button class="btn-reset" type="button" onclick="saveCurrentProfile()">Save Profile</button>
+        <button class="btn-reset" type="button" onclick="createProfile()">New</button>
+        <button class="btn-reset" type="button" onclick="saveCurrentProfile()">Save</button>
         <button class="btn-reset" type="button" onclick="deleteProfile()">Delete</button>
       </div>
+      <div class="drawer-section-label">🔑 Encrypted Backup</div>
       <div class="backup-row">
-        <input type="password" id="backupPassphrase" class="field-select" placeholder="Backup passphrase" autocomplete="new-password" />
-        <button class="btn-reset" type="button" onclick="exportEncryptedBackup()">Export Encrypted Backup</button>
-        <label class="btn-reset file-btn" for="backupImportFile">Import Encrypted Backup</label>
+        <input type="password" id="backupPassphrase" class="field-select" placeholder="Passphrase (min 16 chars)" autocomplete="new-password" />
+        <button class="btn-reset" type="button" onclick="exportEncryptedBackup()">Export Backup</button>
+        <label class="btn-reset file-btn" for="backupImportFile">Import Backup</label>
         <input id="backupImportFile" type="file" accept=".json,application/json" onchange="importEncryptedBackup(event)" />
       </div>
+      <div class="drawer-section-label">🔔 Annual Reminder</div>
       <div class="reminder-row">
         <input type="date" id="zakahDueDate" class="field-select" />
         <select id="reminderCalendar" class="field-select">
-          <option value="solar">Solar annual reminder</option>
-          <option value="lunar">Hijri-mode annual reminder (354 days)</option>
+          <option value="solar">Solar (365 days)</option>
+          <option value="lunar">Hijri (354 days)</option>
         </select>
-        <button class="btn-reset" type="button" onclick="saveReminder()">Save Reminder</button>
-        <button class="btn-reset" type="button" onclick="requestReminderPermission()">Enable Notification</button>
+        <button class="btn-reset" type="button" onclick="saveReminder()">Save</button>
+        <button class="btn-reset" type="button" onclick="requestReminderPermission()">Enable Notifications</button>
       </div>
       <div class="network-status-row">
         <span class="badge-small" id="trustBadge">🔒 Local-only / No analytics / No server</span>
@@ -392,7 +358,7 @@
         </div>
       </details>
     </div>
-  </div>
+  </details>
 
   <!-- SECTION A: CASH & LIQUID -->
   <a class="section-anchor" id="section-a"></a>
@@ -692,6 +658,11 @@
       <div class="results-eligible no" id="eligibleBadge" data-i18n="not_eligible">Not Eligible Yet</div>
     </div>
 
+    <div class="main-result-highlight">
+      <div class="main-result-label" data-i18n="zakah_due_label">Zakah Due / Payable</div>
+      <div class="main-result-value" id="r_zakahDue">৳ 0</div>
+    </div>
+
     <div class="results-grid">
       <div class="result-stat">
         <div class="result-stat-label" data-i18n="total_assets_label">Total Assets</div>
@@ -719,9 +690,9 @@
         <div class="result-stat-sub" id="r_rateSub">Lunar (Hijri)</div>
       </div>
       <div class="result-stat">
-        <div class="result-stat-label" data-i18n="zakah_due_label">Zakah Due</div>
-        <div class="result-stat-value green big" id="r_zakahDue">৳ 0</div>
-        <div class="result-stat-sub" data-i18n="payable_label">Payable this year</div>
+        <div class="result-stat-label">Currency / PWA</div>
+        <div class="result-stat-value" id="r_currPwa">Local</div>
+        <div class="result-stat-sub">100% On-Device</div>
       </div>
     </div>
 
@@ -755,6 +726,22 @@
       <span class="btn-label" data-i18n="export_pdf">Export PDF</span>
     </button>
     <button class="btn-reset" onclick="resetAll()">↺ <span data-i18n="reset_btn">Reset All Fields</span></button>
+  </div>
+
+  <!-- MOBILE BOTTOM NAV BAR -->
+  <div class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Step navigation">
+    <button class="mobile-nav-btn mobile-nav-prev" type="button" onclick="prevStep()" id="mobileNavPrev">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      <span>Prev</span>
+    </button>
+    <div class="mobile-nav-center">
+      <div class="mobile-step-dots" id="mobileStepDots"></div>
+      <div class="mobile-step-label" id="mobileStepLabel">Step 1 of 7</div>
+    </div>
+    <button class="mobile-nav-btn mobile-nav-next" type="button" onclick="nextStep()" id="mobileNavNext">
+      <span>Next</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
   </div>
 
 </div>
