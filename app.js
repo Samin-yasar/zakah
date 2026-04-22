@@ -121,7 +121,7 @@ const BHORI_TO_GRAM   = 11.6638;
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
 const PERSIST_THROTTLE_MS = 250;
 const DOWNLOAD_REVOKE_DELAY_MS = 1000;
-const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', AED: 'د.إ', GBP:'£', AUD:'A$', INR:'₹', CAD: 'C$', MYR: 'MR', JPY: '¥', IDR: 'RP' };
+const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', AED: 'د.إ', GBP:'£', AUD:'A$', INR:'₹', CAD: 'C$', MYR: 'RM', JPY: '¥', IDR: 'Rp' };
 const METALS_URL = './data/metals.json';
 const RATES_URL  = './data/rates.json';
 
@@ -1033,6 +1033,8 @@ function shareMore() {
     url:   window.location.href,
   };
   if (navigator.share) {
+    navigator.share(shareData).catch(err => {
+      if (err?.name !== 'AbortError') shareCopyLink();
     });
   } else {
     shareCopyLink();
