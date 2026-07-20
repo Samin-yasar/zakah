@@ -1,9 +1,46 @@
-/* ════════════════════════════════════════
-   SERVICE WORKER — Zakah Calculator
-   Samin's Initiatives
-   ════════════════════════════════════════ */
+/**
+ * ════════════════════════════════════════
+ * SERVICE WORKER — Zakah Calculator PWA
+ * ════════════════════════════════════════
+ * 
+ * Provides offline functionality and performance optimizations:
+ * 
+ * Caching Strategy:
+ * - SHELL: Cache-first for static assets (HTML, CSS, JS, icons, translations)
+ * - DATA: Network-first for live prices (metals.json, rates.json)
+ *   Falls back to cache if network fails, enabling offline operation with stale prices
+ * 
+ * Cache Versioning:
+ * - Incrementing version numbers (v11) in cache names
+ * - Old caches are cleaned up during activate event
+ * - Update CACHE_NAME and DATA_CACHE to bust caches on deploy
+ * 
+ * Lifecycle Events:
+ * - install: Pre-cache all shell assets
+ * - activate: Cleanup old versioned caches
+ * - fetch: Serve from cache, fallback to network, or offline page
+ * 
+ * Installation:
+ * - Registered in index.html: navigator.serviceWorker.register('./sw.js')
+ * - Requires HTTP or HTTPS (works on localhost)
+ * - Does NOT work with file:// URLs
+ * 
+ * @version 2026.04.17-zk1
+ * @lifecycle install → activate → fetch
+ */
 
+/**
+ * Primary cache for static shell assets
+ * Increment version number to invalidate all old caches
+ * @constant {string}
+ */
 const CACHE_NAME   = 'zakah-calc-v11';
+
+/**
+ * Secondary cache for dynamic price data
+ * Increment version number to invalidate old price caches
+ * @constant {string}
+ */
 const DATA_CACHE   = 'zakah-data-v11';
 
 // Periodic sync tag — must match the tag registered in the client

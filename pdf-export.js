@@ -1,6 +1,35 @@
-/* ═══════════════════════════════════════════════════════════
-   pdf-export.js — Zakah Calculator PDF Report Generator
-   ═══════════════════════════════════════════════════════════ */
+/**
+ * ═══════════════════════════════════════════════════════════
+ * pdf-export.js — Zakah Calculator PDF Report Generator
+ * ═══════════════════════════════════════════════════════════
+ * 
+ * Generates a formatted PDF summary of the Zakah calculation.
+ * 
+ * Dependencies:
+ * - jsPDF (loaded dynamically via CDN when user exports PDF)
+ * - app.js (for global state: form values, calculation results)
+ * 
+ * Features:
+ * - User's local timezone in report header
+ * - Per-section asset and liability breakdowns
+ * - Calculation methodology (Nisab basis, calendar type)
+ * - Final Zakah obligation and eligibility status
+ * 
+ * Limitations:
+ * - Page breaks may occur at unexpected places with very large numbers
+ * - Icons/images not embedded; only text rendering
+ * - Font limited to jsPDF built-in fonts (Arial, Helvetica, etc.)
+ * 
+ * @version 2026.04.17-zk1
+ */
+
+/**
+ * Fetch current date/time in user's timezone
+ * Used for PDF report header
+ * Falls back to local browser time if timezone API is unavailable
+ * @async
+ * @returns {Promise<Object>} — { display: string, iso: string }
+ */
 async function fetchReportDate() { 
   let userTZ = 'UTC';
   try {
@@ -45,7 +74,12 @@ async function fetchReportDate() {
   }
 }
 
-/* ── Numeric value reader from input fields ─────────────── */
+/**
+ * Helper — extract numeric value from form input field
+ * Returns 0 if field missing or value unparseable
+ * @param {string} id — HTML element ID
+ * @returns {number} — parsed numeric value or 0
+ */
 function _v(id) {
   return parseFloat(document.getElementById(id)?.value || 0) || 0;
 }

@@ -1,0 +1,30 @@
+# This file controls automatic code review assignment for pull requests.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files
+* @Samin-yasar
+
+# Calculation logic
+app.js @Samin-yasar
+
+# PDF export functionality
+pdf-export.js @Samin-yasar
+
+# Service Worker and offline caching
+sw.js @Samin-yasar
+
+# Translations and internationalization
+/translations/ @Samin-yasar
+
+# PWA manifest and configuration
+manifest.json @Samin-yasar
+
+# Data files (metals prices, exchange rates)
+/data/ @Samin-yasar
+
+# GitHub Actions and CI/CD workflows
+/.github/workflows/ @Samin-yasar
+
+# Documentation
+*.md @Samin-yasar
+SECURITY.md @Samin-yasar

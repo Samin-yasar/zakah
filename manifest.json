@@ -2,6 +2,10 @@
   "name": "Zakah Calculator",
   "short_name": "Zakah Calc",
   "description": "A comprehensive, scholarly-accurate Zakah calculator covering all asset categories including digital wallets, investments, and business assets.",
+  "author": {
+    "name": "Samin Yasar",
+    "url": "https://samin-yasar.dev"
+  },
   "id": "dev.samin-yasar.zakah-calc",
   "start_url": "./index.html",
   "scope": "./",
