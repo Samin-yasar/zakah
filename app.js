@@ -1,8 +1,49 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * ZAKAH CALCULATOR — Main Application Logic
+ * ═══════════════════════════════════════════════════════════════════════
+ * 
+ * A comprehensive, privacy-first Zakah calculation engine running entirely
+ * in the browser. This single-file module handles:
+ * 
+ * 1. Theme Management — Dark/light mode toggle with persistence
+ * 2. Internationalization (i18n) — Dynamic language loading and UI translation
+ * 3. Currency & Price Fetching — Live metal & FX rate management with fallbacks
+ * 4. Form State Management — Serialization, persistence, profile management
+ * 5. Encrypted Backups — AES-GCM encryption with user passphrase
+ * 6. Zakah Calculation Engine — Multi-section asset aggregation and calculation
+ * 7. Results Display — Real-time UI updates and Zakah obligation determination
+ * 8. Wizard Navigation — Step-by-step guided flow for new users
+ * 9. Utility Functions — Data export, reminders, accessibility helpers
+ * 
+ * Architecture:
+ * - No build process required; no external JS dependencies (optional jsPDF for PDF export)
+ * - localStorage for optional user data persistence (Privacy Mode ON = no storage)
+ * - All calculations happen client-side; zero server communication
+ * - Service Worker (sw.js) handles offline caching and app installation
+ * 
+ * Security:
+ * - Private by default: Privacy Mode prevents localStorage writes
+ * - Inputs validated and escaped before rendering to prevent XSS
+ * - Web Crypto API used for encrypted backup encryption/decryption
+ * 
+ * @version 2026.04.17-zk1
+ * @author Samin Yasar <contact@samin-yasar.dev>
+ * @license See LICENSE file for open-source license terms
+ */
+
 const APP_VERSION = '2026.04.17-zk1';
 const PRIVACY_MODE_DEFAULT = true;
 let privacyMode = PRIVACY_MODE_DEFAULT;
 let networkRequestCount = 0;
 
+/**
+ * localStorage helper — read value with fallback
+ * Respects Privacy Mode: returns fallback immediately if Privacy Mode ON
+ * @param {string} key — localStorage key name
+ * @param {*} fallback — value to return if key not found or Privacy Mode active
+ * @returns {*} — stored value, fallback, or null
+ */
 function lsGet(key, fallback = null) {
   if (privacyMode) return fallback;
   try {
@@ -12,14 +53,34 @@ function lsGet(key, fallback = null) {
     return fallback;
   }
 }
+/**
+ * localStorage helper — write value with Privacy Mode check
+ * @param {string} key — localStorage key name
+ * @param {string} value — value to store
+ * @returns {boolean} — true if write succeeded, false if Privacy Mode or error
+ */
 function lsSet(key, value) {
   if (privacyMode) return false;
   try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
 }
+
+/**
+ * localStorage helper — delete value with Privacy Mode check
+ * @param {string} key — localStorage key name
+ * @returns {boolean} — true if delete succeeded, false if Privacy Mode or error
+ */
 function lsRemove(key) {
   if (privacyMode) return false;
   try { localStorage.removeItem(key); return true; } catch (_) { return false; }
 }
+
+/**
+ * Sanitize HTML string to prevent XSS attacks
+ * Escapes: & < > " '
+ * Use when rendering user input or untrusted data to the DOM
+ * @param {string} str — string to escape
+ * @returns {string} — HTML-escaped string
+ */
 function escapeHtml(str = '') {
   return String(str)
     .replaceAll('&', '&amp;')
@@ -176,9 +237,27 @@ function cacheRead(key) {
   } catch (_) { return null; }
 }
 
-/* ════════════════════════════════════════
-   LIVE PRICE FETCHING
-   ════════════════════════════════════════ */
+/**
+ * ════════════════════════════════════════
+ * LIVE PRICE FETCHING & CACHE MANAGEMENT
+ * ════════════════════════════════════════
+ * 
+ * Fetches current gold, silver, and FX rates from data files.
+ * Implements multi-level fallback:
+ *   1. Fresh fetch from data/*.json
+ *   2. Cached prices (24-hour TTL)
+ *   3. Stale cached prices (beyond TTL but still available)
+ *   4. Manual price input fallback (if all else fails)
+ */
+
+/**
+ * Fetch live metal and currency exchange rates with cache + fallback logic
+ * Updates global state: liveGoldUsdPerOz, liveSilverUsdPerOz, fxRates, pricesLive
+ * @async
+ * @param {boolean} isManualRefresh — user manually triggered refresh (bypass cache)
+ * @returns {Promise<void>}
+ * @fires onPricesReady() when prices are loaded
+ */
 async function fetchPrices(isManualRefresh = false) {
   const dot = document.getElementById('liveDot');
   const ts  = document.getElementById('priceTimestamp');
@@ -379,9 +458,18 @@ function fmt(n) {
   return sym + ' ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/* ════════════════════════════════════════
-   SETTINGS TOGGLES
-   ════════════════════════════════════════ */
+/**
+ * ════════════════════════════════════════
+ * SETTINGS & TOGGLES
+ * ════════════════════════════════════════
+ */
+
+/**
+ * Set Nisab threshold basis (silver or gold)
+ * Updates UI buttons and triggers recalculation
+ * @param {string} type — 'silver' or 'gold'
+ * @returns {void}
+ */
 function setNisabType(type) {
   nisabType = type;
   document.getElementById('btn-silver').classList.toggle('active', type === 'silver');
@@ -430,6 +518,11 @@ function togglePrivacyMode() {
   persistState();
 }
 
+/**
+ * Collect all form data into a serializable object for persistence
+ * Only includes non-zero values to minimize payload size
+ * @returns {Object} — form data object with fields, settings, and currency
+ */
 function collectFormData() {
   const payload = {};
   FIELD_IDS.forEach(id => {
