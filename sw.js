@@ -11,7 +11,7 @@
  *   Falls back to cache if network fails, enabling offline operation with stale prices
  * 
  * Cache Versioning:
- * - Incrementing version numbers (v11) in cache names
+ * - Incrementing version numbers (v13) in cache names
  * - Old caches are cleaned up during activate event
  * - Update CACHE_NAME and DATA_CACHE to bust caches on deploy
  * 
@@ -25,7 +25,7 @@
  * - Requires HTTP or HTTPS (works on localhost)
  * - Does NOT work with file:// URLs
  * 
- * @version 2026.04.17-zk1
+ * @version 2026.09.30-zk2
  * @lifecycle install → activate → fetch
  */
 
@@ -34,14 +34,14 @@
  * Increment version number to invalidate all old caches
  * @constant {string}
  */
-const CACHE_NAME   = 'zakah-calc-v11';
+const CACHE_NAME   = 'zakah-calc-v13';
 
 /**
  * Secondary cache for dynamic price data
  * Increment version number to invalidate old price caches
  * @constant {string}
  */
-const DATA_CACHE   = 'zakah-data-v11';
+const DATA_CACHE   = 'zakah-data-v13';
 
 // Periodic sync tag — must match the tag registered in the client
 const PERIODIC_SYNC_TAG = 'zakah-rates-refresh';

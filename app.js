@@ -6,72 +6,42 @@
  * A comprehensive, privacy-first Zakah calculation engine running entirely
  * in the browser. This single-file module handles:
  * 
- * 1. Theme Management — Dark/light mode toggle with persistence
+ * 1. Theme Management — In-memory dark/light mode preference
  * 2. Internationalization (i18n) — Dynamic language loading and UI translation
- * 3. Currency & Price Fetching — Live metal & FX rate management with fallbacks
- * 4. Form State Management — Serialization, persistence, profile management
- * 5. Encrypted Backups — AES-GCM encryption with user passphrase
- * 6. Zakah Calculation Engine — Multi-section asset aggregation and calculation
- * 7. Results Display — Real-time UI updates and Zakah obligation determination
- * 8. Wizard Navigation — Step-by-step guided flow for new users
- * 9. Utility Functions — Data export, reminders, accessibility helpers
+ * 3. Currency & Price Fetching — Public metal & FX rate data with fallbacks
+ * 4. Form State Management — In-memory amounts; no saved profiles or backups
+ * 5. PDF Reports — User-owned downloads generated on the device
+ * 6. Zakah Calculation Engine — Core logic for computing zakat liability
+ * 7. Section Management — Grouped form sections and validation
+ * 8. Wizard Navigation — Section-based guided flow with direct navigation
+ * 9. Utility Functions — Support template and accessibility helpers
  * 
  * Architecture:
  * - No build process required; no external JS dependencies (optional jsPDF for PDF export)
- * - localStorage for optional user data persistence (Privacy Mode ON = no storage)
- * - All calculations happen client-side; zero server communication
+ * - Financial inputs and settings are in-memory; legacy saved keys are removed
+ * - Calculations run client-side; only public assets and rates are fetched
  * - Service Worker (sw.js) handles offline caching and app installation
  * 
  * Security:
- * - Private by default: Privacy Mode prevents localStorage writes
+ * - Financial inputs are never persisted or sent by the calculator
  * - Inputs validated and escaped before rendering to prevent XSS
- * - Web Crypto API used for encrypted backup encryption/decryption
+ * - Web Crypto API is used only for the public release-integrity checksum
  * 
- * @version 2026.04.17-zk1
+ * @version 2026.09.30-zk2
  * @author Samin Yasar <contact@samin-yasar.dev>
  * @license See LICENSE file for open-source license terms
  */
 
-const APP_VERSION = '2026.04.17-zk1';
-const PRIVACY_MODE_DEFAULT = true;
-let privacyMode = PRIVACY_MODE_DEFAULT;
+const APP_VERSION = '2026.09.30-zk2';
 let networkRequestCount = 0;
+const sessionValues = new Map();
 
-/**
- * localStorage helper — read value with fallback
- * Respects Privacy Mode: returns fallback immediately if Privacy Mode ON
- * @param {string} key — localStorage key name
- * @param {*} fallback — value to return if key not found or Privacy Mode active
- * @returns {*} — stored value, fallback, or null
- */
-function lsGet(key, fallback = null) {
-  if (privacyMode) return fallback;
-  try {
-    const val = localStorage.getItem(key);
-    return val === null ? fallback : val;
-  } catch (_) {
-    return fallback;
-  }
-}
-/**
- * localStorage helper — write value with Privacy Mode check
- * @param {string} key — localStorage key name
- * @param {string} value — value to store
- * @returns {boolean} — true if write succeeded, false if Privacy Mode or error
- */
-function lsSet(key, value) {
-  if (privacyMode) return false;
-  try { localStorage.setItem(key, value); return true; } catch (_) { return false; }
+function sessionGet(key, fallback = null) {
+  return sessionValues.has(key) ? sessionValues.get(key) : fallback;
 }
 
-/**
- * localStorage helper — delete value with Privacy Mode check
- * @param {string} key — localStorage key name
- * @returns {boolean} — true if delete succeeded, false if Privacy Mode or error
- */
-function lsRemove(key) {
-  if (privacyMode) return false;
-  try { localStorage.removeItem(key); return true; } catch (_) { return false; }
+function sessionSet(key, value) {
+  sessionValues.set(key, value);
 }
 
 /**
@@ -94,7 +64,7 @@ function escapeHtml(str = '') {
    THEME TOGGLE — Artisan Islamic Icon
    ════════════════════════════════════════ */
 (function initTheme() {
-  const saved = lsGet('zakat_theme');
+  const saved = sessionGet('zakat_theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isLight = saved ? saved === 'light' : !prefersDark;
   if (isLight) document.documentElement.classList.add('light-theme');
@@ -110,7 +80,7 @@ function toggleTheme() {
   btn.classList.add('spinning', 'ripple');
   setTimeout(() => btn.classList.remove('spinning', 'ripple'), 600);
 
-  lsSet('zakat_theme', isLight ? 'light' : 'dark');
+  sessionSet('zakat_theme', isLight ? 'light' : 'dark');
   updateThemeTooltip(isLight);
 }
 
@@ -122,7 +92,7 @@ function updateThemeTooltip(isLight) {
 /* ════════════════════════════════════════
    LANGUAGE LOADER
    ════════════════════════════════════════ */
-let currentLang = lsGet('zakat_lang', 'en') || 'en';
+let currentLang = sessionGet('zakat_lang', 'en') || 'en';
 let L = {};
 
 function loadLang(lang, callback) {
@@ -168,10 +138,10 @@ function applyLang(lang) {
 
 function setLang(lang) {
   currentLang = lang;
-  lsSet('zakat_lang', lang);
+  sessionSet('zakat_lang', lang);
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-bn').classList.toggle('active', lang === 'bn');
-  loadLang(lang, () => { applyLang(lang); calc(); });
+  loadLang(lang, () => { applyLang(lang); calc(); updateWizardLabel(); });
 }
 
 /* ════════════════════════════════════════
@@ -180,8 +150,6 @@ function setLang(lang) {
 const TROY_OZ_TO_GRAM = 31.1035;
 const BHORI_TO_GRAM   = 11.6638;
 const CACHE_TTL_MS    = 24 * 60 * 60 * 1000;
-const PERSIST_THROTTLE_MS = 250;
-const DOWNLOAD_REVOKE_DELAY_MS = 1000;
 const CURRENCY_SYMBOLS = { BDT:'৳', USD:'$', SAR:'﷼', AED: 'د.إ', GBP:'£', AUD:'A$', INR:'₹', CAD: 'C$', MYR: 'RM', JPY: '¥', IDR: 'Rp' };
 const METALS_URL = './data/metals.json';
 const RATES_URL  = './data/rates.json';
@@ -189,7 +157,7 @@ const RATES_URL  = './data/rates.json';
 /* ════════════════════════════════════════
    STATE
    ════════════════════════════════════════ */
-let currentCurrency    = lsGet('zakat_currency', 'BDT') || 'BDT';
+let currentCurrency    = sessionGet('zakat_currency', 'BDT') || 'BDT';
 let nisabType          = 'silver';
 let calendarType       = 'lunar';
 let stockMethod        = 'trade';
@@ -199,9 +167,7 @@ let fxRates            = {};
 let pricesLive         = false;
 let ratesTimestampMs   = 0;
 let trustedRatesSource = 'none';
-let profiles = {};
-let activeProfile = 'default';
-let reminderConfig = null;
+
 
 const FIELD_IDS = [
   'f_cashOnHand','f_cashForeign','f_bankSavings','f_bankCurrent','f_bankFD',
@@ -219,17 +185,17 @@ const FIELD_IDS = [
 ];
 const STEPS = ['settings','cash','metals','investments','business','liabilities','results'];
 let currentStep = 0;
-let persistTimer = null;
+
 
 /* ════════════════════════════════════════
    CACHE HELPERS
    ════════════════════════════════════════ */
 function cacheWrite(key, data) {
-  lsSet(key, JSON.stringify({ ts: Date.now(), data }));
+  sessionSet(key, JSON.stringify({ ts: Date.now(), data }));
 }
 function cacheRead(key) {
   try {
-    const raw = lsGet(key);
+    const raw = sessionGet(key);
     if (!raw) return null;
     const obj = JSON.parse(raw);
     if (Date.now() - obj.ts > CACHE_TTL_MS) return null;
@@ -317,8 +283,8 @@ async function fetchPrices(isManualRefresh = false) {
 
   } catch (err) {
     console.warn('Price fetch failed:', err.message);
-    const staleMetal = (() => { try { const r = lsGet('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
-    const staleFx    = (() => { try { const r = lsGet('zakat_fx');     return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    const staleMetal = (() => { try { const r = sessionGet('zakat_metals'); return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
+    const staleFx    = (() => { try { const r = sessionGet('zakat_fx');     return r ? JSON.parse(r).data : null; } catch(_) { return null; } })();
     if (staleMetal && staleFx) {
       liveGoldUsdPerOz   = staleMetal.gold;
       liveSilverUsdPerOz = staleMetal.silver;
@@ -436,7 +402,7 @@ function updateFxBanner() {
    ════════════════════════════════════════ */
 function setCurrency(cur) {
   currentCurrency = cur;
-  lsSet('zakat_currency', cur);
+  sessionSet('zakat_currency', cur);
   updateCurrencySymbols();
   updatePriceDisplay();
   updateFxBanner();
@@ -494,332 +460,148 @@ function toggleSection(id) {
 
 function toggleHighContrast() {
   const on = document.documentElement.classList.toggle('high-contrast');
-  lsSet('zakat_contrast', on ? 'on' : 'off');
+  sessionSet('zakat_contrast', on ? 'on' : 'off');
 }
 
-function updatePrivacyUi() {
-  const btn = document.getElementById('privacyModeBtn');
-  const status = document.getElementById('privacyModeStatus');
-  if (!btn || !status) return;
-  btn.classList.toggle('active', privacyMode);
-  btn.textContent = privacyMode ? 'ON' : 'OFF';
-  status.textContent = privacyMode
-    ? 'Privacy mode is ON — local persistence is disabled.'
-    : 'Privacy mode is OFF — local-only persistence is enabled.';
-}
-
-function togglePrivacyMode() {
-  privacyMode = !privacyMode;
-  updatePrivacyUi();
-  if (privacyMode) {
-    updateDataFootprint();
-    return;
-  }
-  persistState();
-}
-
-/**
- * Collect all form data into a serializable object for persistence
- * Only includes non-zero values to minimize payload size
- * @returns {Object} — form data object with fields, settings, and currency
- */
-function collectFormData() {
-  const payload = {};
-  FIELD_IDS.forEach(id => {
-    const val = v(id);
-    if (val > 0) payload[id] = val;
-  });
-  payload.nisabType = nisabType;
-  payload.calendarType = calendarType;
-  payload.stockMethod = stockMethod;
-  payload.currency = currentCurrency;
-  return payload;
-}
-
-function applyFormData(data = {}) {
-  FIELD_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.value = data[id] || 0;
-  });
-  const cur = data.currency || currentCurrency;
-  document.getElementById('currencySelect').value = cur;
-  setCurrency(cur);
-  setNisabType(data.nisabType || 'silver');
-  setCalendar(data.calendarType || 'lunar');
-  const target = data.stockMethod || 'trade';
-  const lbl = document.querySelector(`#stockMethodGroup .radio-btn input[value="${target}"]`)?.closest('.radio-btn');
-  if (lbl) selectRadio('stockMethod', target, lbl);
-}
-
-function persistState({ updateFootprint = true } = {}) {
-  if (privacyMode) return;
-  lsSet('zakat_form_data', JSON.stringify({ ts: Date.now(), data: collectFormData() }));
-  lsSet('zakat_profiles', JSON.stringify(profiles));
-  lsSet('zakat_active_profile', activeProfile);
-  if (reminderConfig) lsSet('zakat_reminder', JSON.stringify(reminderConfig));
-  if (updateFootprint) updateDataFootprint();
-}
-
-function schedulePersistState() {
-  if (privacyMode) return;
-  clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => persistState({ updateFootprint: false }), PERSIST_THROTTLE_MS);
-}
-
-function restoreState() {
-  const saved = lsGet('zakat_form_data');
-  if (saved) {
-    try { applyFormData(JSON.parse(saved).data || {}); } catch (_) {}
-  }
-}
-
-function loadProfiles() {
-  try { profiles = JSON.parse(lsGet('zakat_profiles', '{}')) || {}; } catch (_) { profiles = {}; }
-  if (!profiles.default) profiles.default = { name: 'default', data: {} };
-  activeProfile = lsGet('zakat_active_profile', 'default') || 'default';
-  renderProfiles();
-}
-
-function renderProfiles() {
-  const sel = document.getElementById('profileSelect');
-  if (!sel) return;
-  sel.innerHTML = '';
-  Object.keys(profiles).forEach(k => {
-    const opt = document.createElement('option');
-    opt.value = k;
-    opt.textContent = (profiles[k].name || k).slice(0, 60);
-    sel.appendChild(opt);
-  });
-  sel.value = profiles[activeProfile] ? activeProfile : 'default';
-  sel.onchange = () => {
-    activeProfile = sel.value;
-    if (profiles[activeProfile]?.data) applyFormData(profiles[activeProfile].data);
-    persistState();
-    calc();
-  };
-}
-
-function createProfile() {
-  const name = prompt('New profile name (local only):');
-  if (!name) return;
-  const id = `profile_${Date.now()}`;
-  profiles[id] = { name: name.trim().replace(/[<>"']/g, '').slice(0, 60), data: collectFormData() };
-  activeProfile = id;
-  renderProfiles();
-  persistState();
-}
-
-function saveCurrentProfile() {
-  if (!profiles[activeProfile]) profiles[activeProfile] = { name: activeProfile, data: {} };
-  profiles[activeProfile].data = collectFormData();
-  persistState();
-  calc();
-}
-
-function deleteProfile() {
-  if (activeProfile === 'default') return;
-  delete profiles[activeProfile];
-  activeProfile = 'default';
-  renderProfiles();
-  if (profiles.default?.data) applyFormData(profiles.default.data);
-  persistState();
-  calc();
-}
-
-async function deriveBackupKey(passphrase, salt) {
-  const enc = new TextEncoder();
-  const material = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256' },
-    material,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
-}
-
-function bytesToBase64(bytes) {
-  const chunkSize = 0x8000;
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-}
-
-async function exportEncryptedBackup() {
-  const passphrase = document.getElementById('backupPassphrase')?.value || '';
-  if (!passphrase) return alert('Enter a backup passphrase.');
-  if (passphrase.length < 16) return alert('Use a stronger passphrase (minimum 16 characters).');
-  const payload = {
-    version: APP_VERSION,
-    createdAt: new Date().toISOString(),
-    data: { form: collectFormData(), profiles, reminderConfig, currency: currentCurrency }
-  };
-  const enc = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveBackupKey(passphrase, salt);
-  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(payload)));
-  const cipherBytes = new Uint8Array(cipher);
-  const out = {
-    kdf: 'PBKDF2-SHA256',
-    alg: 'AES-GCM-256',
-    salt: bytesToBase64(salt),
-    iv: bytesToBase64(iv),
-    ct: bytesToBase64(cipherBytes)
-  };
-  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  const objectUrl = URL.createObjectURL(blob);
-  a.href = objectUrl;
-  a.download = `zakah-backup-${Date.now()}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), DOWNLOAD_REVOKE_DELAY_MS);
-}
-
-async function importEncryptedBackup(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const passphrase = document.getElementById('backupPassphrase')?.value || '';
-  if (!passphrase) return alert('Enter backup passphrase first.');
-  if (passphrase.length < 16) return alert('Use a stronger passphrase (minimum 16 characters).');
+function removeLegacySavedData() {
   try {
-    const raw = JSON.parse(await file.text());
-    const salt = Uint8Array.from(atob(raw.salt), c => c.charCodeAt(0));
-    const iv = Uint8Array.from(atob(raw.iv), c => c.charCodeAt(0));
-    const ct = Uint8Array.from(atob(raw.ct), c => c.charCodeAt(0));
-    const key = await deriveBackupKey(passphrase, salt);
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-    const data = JSON.parse(new TextDecoder().decode(plain));
-    if (data?.data?.form) applyFormData(data.data.form);
-    profiles = data?.data?.profiles || profiles;
-    reminderConfig = data?.data?.reminderConfig || reminderConfig;
-    renderProfiles();
-    persistState();
-    calc();
-  } catch (err) {
-    const msg = String(err?.message || '').toLowerCase();
-    if (msg.includes('json')) alert('Invalid backup file format.');
-    else if (msg.includes('decrypt') || msg.includes('operation')) alert('Decryption failed. Check passphrase or file integrity.');
-    else alert('Backup import failed.');
-  } finally {
-    event.target.value = '';
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('zakat_') || key === 'pwa_dismissed');
+    keys.forEach(key => localStorage.removeItem(key));
+  } catch (_) {
+    // Storage can be unavailable in private browsing; nothing is read or restored.
   }
 }
 
-function requestReminderPermission() {
-  if (!('Notification' in window)) return alert('Notifications are not supported in this browser.');
-  Notification.requestPermission();
+const completedSteps = new Set();
+let sectionPanels = [];
+
+function sectionNames() {
+  return [L.flow_setup || 'Setup', L.flow_cash || 'Cash', L.flow_metals || 'Metals',
+    L.flow_investments || 'Investments', L.flow_business || 'Business',
+    L.flow_liabilities || 'Deductions', L.flow_results || 'Results'];
 }
 
-function computeNextReminderDate(baseDate, mode) {
-  if (!baseDate) return null;
-  const d = new Date(baseDate + 'T00:00:00');
-  const next = new Date(d);
-  next.setDate(next.getDate() + (mode === 'lunar' ? 354 : 365));
-  return next;
-}
-
-function saveReminder() {
-  const dateVal = document.getElementById('zakahDueDate')?.value;
-  const mode = document.getElementById('reminderCalendar')?.value || 'solar';
-  if (!dateVal) return;
-  reminderConfig = { date: dateVal, mode, savedAt: Date.now() };
-  persistState();
-  checkReminderNow();
-}
-
-function checkReminderNow() {
-  if (!reminderConfig || !('Notification' in window)) return;
-  const next = computeNextReminderDate(reminderConfig.date, reminderConfig.mode);
-  if (!next) return;
-  const diff = next.getTime() - Date.now();
-  if (diff <= 24 * 60 * 60 * 1000 && Notification.permission === 'granted') {
-    new Notification('Zakah Reminder', { body: `Zakah due reminder (${reminderConfig.mode === 'lunar' ? 'Hijri mode' : 'Solar mode'}) is near.` });
-  }
-}
-
-function deleteStorageKey(key) {
-  lsRemove(key);
-  updateDataFootprint();
-}
-
-function updateDataFootprint() {
-  const panel = document.getElementById('dataFootprint');
-  if (!panel) return;
-  if (privacyMode) {
-    panel.textContent = 'Privacy mode ON: localStorage writes disabled.';
-    return;
-  }
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('zakat_') || k === 'pwa_dismissed');
-  if (!keys.length) {
-    panel.textContent = 'No local keys found.';
-    return;
-  }
-  panel.innerHTML = keys.map(k => {
-    const val = lsGet(k, '') || '';
-    const size = new Blob([val]).size;
-    return `<div class="footprint-item"><span>${escapeHtml(k)}</span><span>${size} bytes</span><button class="btn-reset tiny footprint-delete-btn" type="button" data-key="${encodeURIComponent(k)}">Delete</button></div>`;
-  }).join('');
-  panel.querySelectorAll('.footprint-delete-btn').forEach(btn => {
-    btn.addEventListener('click', () => deleteStorageKey(decodeURIComponent(btn.getAttribute('data-key') || '')));
+function initSectionFlow() {
+  sectionPanels = [document.querySelector('#settings + .settings-card'),
+    ...['sec-cash', 'sec-metals', 'sec-invest', 'sec-biz', 'sec-liab', 'resultsPanel'].map(id => document.getElementById(id))];
+  sectionPanels.forEach((panel, index) => {
+    const heading = panel?.querySelector('.section-title, .settings-card-title, .results-title');
+    if (heading) {
+      heading.id = `flowHeading${index}`;
+      panel.setAttribute('aria-labelledby', heading.id);
+    }
   });
+  const currencySlot = document.getElementById('setupCurrency');
+  if (currencySlot) currencySlot.appendChild(document.getElementById('currencySelect'));
+  document.querySelectorAll('.section-card .section-header').forEach(header => {
+    header.removeAttribute('onclick');
+    header.querySelector('.chevron')?.remove();
+  });
+  document.querySelectorAll('.field input').forEach(input => {
+    const label = input.closest('.field')?.querySelector('label');
+    if (label) label.htmlFor = input.id;
+    input.autocomplete = 'off';
+    if (input.type === 'number') input.step = 'any';
+  });
+  document.querySelectorAll('input[type="number"]').forEach(input => { input.value = 0; });
+  sectionPanels[0]?.querySelectorAll('button, select').forEach(control => {
+    control.addEventListener(control.tagName === 'SELECT' ? 'change' : 'click', () => {
+      completedSteps.delete(0);
+      updateWizardLabel();
+    });
+  });
+  document.querySelectorAll('.section-card input').forEach(input => {
+    input.addEventListener('input', () => {
+      const index = sectionPanels.indexOf(input.closest('.section-card'));
+      completedSteps.delete(index);
+      updateWizardLabel();
+    });
+  });
+  sectionPanels[6]?.after(document.getElementById('privacyDetailsCard'));
+  goStep(0, false);
 }
 
 function updateWizardLabel() {
-  const steps = STEPS.length;
-  const current = Math.min(currentStep + 1, steps);
-  const text = `Step ${current} of ${steps}`;
-  
-  const elDesktop = document.getElementById('wizardStepLabel');
-  const elMobile = document.getElementById('mobileStepLabel');
-  
-  if (elDesktop) elDesktop.textContent = text;
-  if (elMobile) elMobile.textContent = text;
-  
-  updateWizardDots();
-}
-
-function updateWizardDots() {
-  const containers = [
-    document.getElementById('wizardDots'),
-    document.getElementById('mobileStepDots')
-  ];
-  
-  containers.forEach(container => {
-    if (!container) return;
-    container.innerHTML = '';
-    STEPS.forEach((_, idx) => {
-      const dot = document.createElement('div');
-      dot.className = 'step-dot' + (idx === currentStep ? ' active' : '');
-      dot.onclick = () => goStep(idx);
-      container.appendChild(dot);
+  const names = sectionNames();
+  const completeCount = completedSteps.size;
+  const label = document.getElementById('wizardStepLabel');
+  if (label) label.textContent = `${L.flow_section || 'Section'} ${currentStep + 1} / ${STEPS.length} · ${names[currentStep]}`;
+  const status = document.getElementById('sectionProgressLabel');
+  if (status) status.textContent = `${completeCount} / 6 ${L.flow_reviewed || 'sections reviewed'}`;
+  const bar = document.getElementById('sectionProgress');
+  bar?.setAttribute('aria-valuenow', completeCount);
+  bar?.setAttribute('aria-valuetext', status?.textContent || '');
+  document.getElementById('progressFill').style.width = `${completeCount / 6 * 100}%`;
+  const nav = document.getElementById('wizardDots');
+  if (nav) {
+    nav.replaceChildren();
+    names.forEach((name, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'section-tab' + (index === currentStep ? ' active' : '') + (completedSteps.has(index) ? ' complete' : '');
+      button.textContent = name;
+      if (index === currentStep) button.setAttribute('aria-current', 'step');
+      button.setAttribute('aria-label', `${name}${completedSteps.has(index) ? ` — ${L.flow_reviewed || 'reviewed'}` : ''}`);
+      button.onclick = () => goStep(index);
+      nav.appendChild(button);
     });
-  });
+  }
+  const previous = document.getElementById('sectionPrevious');
+  const next = document.getElementById('sectionContinue');
+  const skip = document.getElementById('sectionSkip');
+  if (previous) previous.disabled = currentStep === 0;
+  if (next) {
+    next.hidden = currentStep === 6;
+    next.textContent = currentStep === 5 ? (L.flow_view_results || 'Review results') : (L.flow_continue || 'Continue');
+  }
+  if (skip) skip.hidden = currentStep === 0 || currentStep === 6;
+  const resultNotice = document.getElementById('resultReviewNotice');
+  if (resultNotice) {
+    resultNotice.hidden = completeCount === 6;
+    resultNotice.textContent = L.flow_draft || 'Draft estimate: some sections have not been reviewed. Unfilled amounts count as zero.';
+  }
 }
 
-function goStep(index) {
+function goStep(index, focus = true) {
   currentStep = Math.max(0, Math.min(STEPS.length - 1, index));
-  const targetHash = `#${STEPS[currentStep]}`;
-  navigateToHash(targetHash);
-  updateWizardLabel();
-  
-  // Visual feedback (haptic-like pulse)
-  const navs = [document.querySelector('.wizard-card'), document.getElementById('mobileBottomNav')];
-  navs.forEach(nav => {
-    if (nav) {
-      nav.animate([
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' }
-      ], { duration: 200, easing: 'ease-out' });
-    }
+  sectionPanels.forEach((panel, panelIndex) => {
+    if (!panel) return;
+    panel.hidden = panelIndex !== currentStep;
+    if (panelIndex === currentStep) panel.classList.add('open');
   });
+  const details = document.getElementById('privacyDetailsCard');
+  if (details) details.hidden = currentStep !== 6;
+  document.querySelector('.quran-banner').hidden = currentStep !== 0;
+  document.querySelector('.price-panel').hidden = currentStep !== 0 && currentStep !== 2;
+  document.getElementById('fxBanner').hidden = currentStep !== 0 && currentStep !== 2;
+  updateWizardLabel();
+  if (focus) {
+    const panel = sectionPanels[currentStep];
+    panel?.setAttribute('tabindex', '-1');
+    panel?.focus({ preventScroll: true });
+    document.getElementById('sectionFlow')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  }
 }
-function nextStep() { goStep(currentStep + 1); }
+
+function nextStep() {
+  if (currentStep >= 6) return;
+  const invalid = [...sectionPanels[currentStep].querySelectorAll('input[type="number"]')].find(input => !input.checkValidity());
+  if (invalid) { invalid.reportValidity(); return; }
+  completedSteps.add(currentStep);
+  goStep(currentStep + 1);
+}
+
 function prevStep() { goStep(currentStep - 1); }
+
+function skipSection() {
+  if (currentStep === 0 || currentStep === 6) return;
+  const inputs = sectionPanels[currentStep].querySelectorAll('input[type="number"]');
+  if ([...inputs].some(input => Number(input.value) > 0) && !confirm(L.flow_skip_confirm || 'Mark this section as not applicable and clear its amounts?')) return;
+  inputs.forEach(input => { input.value = 0; });
+  completedSteps.add(currentStep);
+  calc();
+  goStep(currentStep + 1);
+}
 
 function updateSmartHints({ totalAssets, liabTotal, cashTotal, metalTotal, investTotal, bizTotal }) {
   const hints = [];
@@ -1001,9 +783,7 @@ function calc() {
   const isEligible = nisabValue > 0 && netWealth >= nisabValue;
   const zakahDue   = isEligible ? netWealth * zakahRate : 0;
 
-  const filledCount = FIELD_IDS.filter(id => v(id) > 0).length;
-  document.getElementById('progressFill').style.width =
-    Math.min(100, Math.round(filledCount / FIELD_IDS.length * 100)) + '%';
+  updateWizardLabel();
 
   document.getElementById('tot-cash').textContent   = fmt(cashTotal);
   document.getElementById('tot-metals').textContent = fmt(metalTotal);
@@ -1042,7 +822,7 @@ function calc() {
   updateScenarioComparison(netWealth, silverPerGram, goldPerGram);
   updateStaleStatus();
   buildSupportTemplate();
-  schedulePersistState();
+
 }
 
 /* ════════════════════════════════════════
@@ -1050,9 +830,8 @@ function calc() {
    ════════════════════════════════════════ */
 function resetAll() {
   document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = 0);
-  lsRemove('zakat_form_data');
-  if (profiles[activeProfile]) profiles[activeProfile].data = {};
-  persistState();
+  completedSteps.clear();
+  goStep(0, false);
   calc();
 }
 
@@ -1141,9 +920,11 @@ function openSettingsDrawer() {
   const drawer = document.getElementById('settingsDrawer');
   const overlay = document.getElementById('settingsDrawerOverlay');
   if (drawer && overlay) {
-    drawer.classList.add('open');
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+  drawer.inert = false;
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  drawer.querySelector('button')?.focus();
   }
 }
 
@@ -1151,9 +932,12 @@ function closeSettingsDrawer() {
   const drawer = document.getElementById('settingsDrawer');
   const overlay = document.getElementById('settingsDrawerOverlay');
   if (drawer && overlay) {
-    drawer.classList.remove('open');
-    overlay.classList.remove('open');
-    document.body.style.overflow = '';
+  if (!drawer.classList.contains('open')) return;
+  drawer.classList.remove('open');
+  drawer.inert = true;
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('settingsDrawerBtn')?.focus();
   }
 }
 
@@ -1188,16 +972,14 @@ function navigateToHash(hash) {
   
   // Auto-expand privacy card if specifically targeted
   if (key === 'privacy-tools') {
+    goStep(6, false);
     const privacyCard = document.getElementById('privacyDetailsCard');
     if (privacyCard) privacyCard.open = true;
-  }
-  
-  if (!(key in HASH_SECTION_MAP)) return;
+  } else if (!(key in HASH_SECTION_MAP)) return;
   const sectionCardId = HASH_SECTION_MAP[key];
-  if (sectionCardId) {
-    const card = document.getElementById(sectionCardId);
-    if (card && !card.classList.contains('open')) card.classList.add('open');
-  }
+  const stepIndex = sectionCardId ? sectionPanels.findIndex(panel => panel?.id === sectionCardId)
+    : ['results', 'summary'].includes(key) ? 6 : ['settings', 'prices', 'quran'].includes(key) ? 0 : -1;
+  if (stepIndex >= 0) goStep(stepIndex, false);
   setTimeout(() => {
     const anchor = document.getElementById(key);
     if (anchor) {
@@ -1282,7 +1064,7 @@ const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      navigator.standalone === true;
 
 function wasDismissed() {
-  const ts = parseInt(lsGet('pwa_dismissed', '0') || '0', 10);
+  const ts = parseInt(sessionGet('pwa_dismissed', '0') || '0', 10);
   return ts && (Date.now() - ts) < 30 * 24 * 60 * 60 * 1000;
 }
 function showBanner() { if (isStandalone || wasDismissed()) return; banner.hidden = false; if (isIos) iosHint.hidden = false; }
@@ -1297,7 +1079,7 @@ btnInstall?.addEventListener('click', async () => {
     deferredPrompt = null;
   }
 });
-btnDismiss?.addEventListener('click', () => { lsSet('pwa_dismissed', String(Date.now())); hideBanner(); });
+btnDismiss?.addEventListener('click', () => { sessionSet('pwa_dismissed', String(Date.now())); hideBanner(); });
 if (isIos && !isStandalone) { setTimeout(showBanner, 3500); if (btnInstall) btnInstall.hidden = true; }
 window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = null; });
 
@@ -1305,22 +1087,13 @@ window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = n
    INIT
    ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  const savedCur = lsGet('zakat_currency', 'BDT') || 'BDT';
+  const savedCur = sessionGet('zakat_currency', 'BDT') || 'BDT';
   document.getElementById('currencySelect').value = savedCur;
   currentCurrency = savedCur;
   updateCurrencySymbols();
   updateNetworkBadge();
-  updatePrivacyUi();
-  if (lsGet('zakat_contrast') === 'on') document.documentElement.classList.add('high-contrast');
-  try { reminderConfig = JSON.parse(lsGet('zakat_reminder', 'null')); } catch (_) { reminderConfig = null; }
-  if (reminderConfig?.date) {
-    const due = document.getElementById('zakahDueDate');
-    const mode = document.getElementById('reminderCalendar');
-    if (due) due.value = reminderConfig.date;
-    if (mode) mode.value = reminderConfig.mode || 'solar';
-  }
-  loadProfiles();
-  restoreState();
+  removeLegacySavedData();
+  initSectionFlow();
 
   document.getElementById('footerYear').textContent = new Date().getFullYear();
 
@@ -1333,8 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('online', updateNetworkBadge);
   window.addEventListener('offline', updateNetworkBadge);
-  setInterval(() => { updateStaleStatus(); checkReminderNow(); }, 60000);
-  updateDataFootprint();
+  setInterval(updateStaleStatus, 60000);
   updateIntegrityPanel();
   updateWizardLabel(); // This now also updates dots
 
