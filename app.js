@@ -566,8 +566,15 @@ function goStep(index, focus = true) {
   currentStep = Math.max(0, Math.min(STEPS.length - 1, index));
   sectionPanels.forEach((panel, panelIndex) => {
     if (!panel) return;
-    panel.hidden = panelIndex !== currentStep;
-    if (panelIndex === currentStep) panel.classList.add('open');
+    const isCurrent = panelIndex === currentStep;
+    if (isCurrent) {
+      panel.hidden = false;
+      panel.classList.add('open');
+      panel.classList.add('flow-panel-active');
+    } else {
+      panel.hidden = true;
+      panel.classList.remove('flow-panel-active');
+    }
   });
   const details = document.getElementById('privacyDetailsCard');
   if (details) details.hidden = currentStep !== 6;
