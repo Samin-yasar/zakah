@@ -6,7 +6,7 @@
  * Generates a formatted PDF summary of the Zakah calculation.
  * 
  * Dependencies:
- * - jsPDF (loaded dynamically via CDN when user exports PDF)
+ * - jsPDF (bundled locally; no CDN or external API required)
  * - app.js (for global state: form values, calculation results)
  * 
  * Features:
@@ -24,9 +24,8 @@
  */
 
 /**
- * Fetch current date/time in user's timezone
- * Used for PDF report header
- * Falls back to local browser time if timezone API is unavailable
+ * Read the device clock and browser timezone for the PDF report header.
+ * No network request is made.
  * @async
  * @returns {Promise<Object>} — { display: string, iso: string }
  */
@@ -59,19 +58,7 @@ async function fetchReportDate() {
     return { display, iso: parts };
   }
 
-  try {
-    const tzEncoded = encodeURIComponent(userTZ);
-    const res = await fetch(
-      `https://timeapi.io/api/time/current/zone?timeZone=${tzEncoded}`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-    if (!res.ok) throw new Error('non-200');
-    const data = await res.json();
-    const dt = new Date(data.dateTime);
-    return formatDate(dt);
-  } catch (_) {
-    return formatDate(new Date());
-  }
+  return formatDate(new Date());
 }
 
 /**
@@ -146,7 +133,10 @@ async function exportZakatPDF() {
     return;
   }
 
-  const btn = document.getElementById('pdfExportBtn');
+  const btn = document.activeElement?.matches('[data-pdf-download]')
+    ? document.activeElement
+    : document.getElementById('pdfExportBtn');
+  const originalLabel = btn?.querySelector('.btn-label')?.textContent;
   const btnText = btn?.querySelector('.btn-label');
   const btnSpinner = btn?.querySelector('.btn-spin');
   if (btn) btn.disabled = true;
@@ -341,7 +331,14 @@ async function exportZakatPDF() {
     doc.setFillColor(...GOLD_C);
     doc.rect(0, 44.5, 210, 2, 'F');
 
-    let y = 54;
+    const reviewed = completedSteps.size;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...MUTED_C);
+    doc.text(`${reviewed === 6 ? 'Reviewed estimate' : 'DRAFT — incomplete estimate'} | ${reviewed} of 6 sections reviewed`, ML, 54);
+    doc.setFontSize(8);
+    doc.text('Unfilled amounts count as zero. Date from device clock. Keep this financial report private.', ML, 60);
+    let y = 66;
 
     /* ── SETTINGS BANNER ───────────────────────────────────── */
     doc.setFillColor(...LGOLD_BG);
@@ -588,7 +585,7 @@ async function exportZakatPDF() {
     alert('PDF generation failed. Please try again.');
   } finally {
     if (btn) btn.disabled = false;
-    if (btnText) btnText.textContent = 'Export PDF';
+    if (btnText) btnText.textContent = originalLabel || L.export_pdf || 'Download PDF';
     if (btnSpinner) btnSpinner.style.display = 'none';
   }
 }

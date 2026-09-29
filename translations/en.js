@@ -6,7 +6,20 @@ window.LANG_DATA = {
   badge: "2026 Professional Zakah Calculator",
   hero_title: "Calculate Your Zakah with Precision",
   hero_desc: "A comprehensive, scholarly-accurate calculator covering all asset categories including digital wallets, investments, and business assets.",
-  security_note: "100% Secure & Open-Source — All data processed locally in your browser. No server. No data shared with anyone.",
+  security_note: "No accounts. No saved profiles. Your financial inputs stay in your browser and are not sent to us.",
+  flow_title: "One section at a time",
+  flow_intro: "Keep related amounts together. Jump to any section, or mark it not applicable.",
+  flow_setup: "Setup", flow_cash: "Cash", flow_metals: "Metals", flow_investments: "Investments",
+  flow_business: "Business", flow_liabilities: "Deductions", flow_results: "Results",
+  flow_section: "Section", flow_reviewed: "sections reviewed", flow_currency: "Your calculation currency",
+  flow_back: "Back", flow_continue: "Continue", flow_view_results: "Review results", flow_skip: "Not applicable",
+  flow_skip_confirm: "Mark this section as not applicable and clear its amounts?",
+  flow_draft: "Draft estimate: some sections have not been reviewed. Unfilled amounts count as zero.",
+  download_title: "Your copy. Your control.",
+  download_note: "Download your current amounts and estimate as a PDF at any point. Nothing is saved by the app. Reloading starts fresh; the PDF is a record, not a file you can import to resume.",
+  calculation_details: "Calculation details & privacy",
+  private_by_design: "No accounts. No financial data uploads.",
+  privacy_detail: "Your financial inputs stay in this open page. We do not send, log, or link them to an account. The app caches public files and market rates for offline use; hosting providers may keep standard request logs.",
   quran_trans: '"Establish prayer and give Zakah." — Quran 2:43',
 
   calc_settings: "Calculation Settings",
@@ -179,7 +192,7 @@ window.LANG_DATA = {
   share_whatsapp_msg: "Calculate your Zakah accurately with this free, scholarly-precise calculator:",
 
   /* ── PDF export ───────────────────────────────────────── */
-  export_pdf:         "Export PDF",
+  export_pdf:         "Download PDF",
   export_pdf_gen:     "Generating…",
 
   /* ── Local Storage / Data Persistence ────────────────── */
